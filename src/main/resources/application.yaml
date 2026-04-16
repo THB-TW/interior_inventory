@@ -1,3 +1,27 @@
 spring:
   application:
     name: interior-inventory
+
+# 資料來源設定（請依你的 Docker / 本機環境調整）
+datasource:
+  url: jdbc:postgresql://localhost:5432/interior_inventory
+  username: order_user
+  password: 123
+  driver-class-name: org.postgresql.Driver
+
+jpa:
+  hibernate:
+    ddl-auto: none    # 因為你已經用 schema.sql 建好表，這裡設 none
+  show-sql: true      # 開發階段可以先開，方便看到 SQL
+  properties:
+    hibernate:
+      format_sql: true
+
+server:
+port: 8080
+
+logging:
+level:
+  root: INFO
+  org.springframework.web: INFO
+  org.hibernate.SQL: DEBUG      # 如果 SQL 太吵，可以改回 INFO
