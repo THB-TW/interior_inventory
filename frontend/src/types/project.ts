@@ -33,15 +33,17 @@ export interface PageParams {
 // 案件狀態 Enum（對應後端 ProjectStatus）
 // ============================================================
 
-export enum ProjectStatus {
-  INQUIRY = 'INQUIRY',
-  QUOTING = 'QUOTING',
-  CONFIRMED = 'CONFIRMED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  INSPECTION = 'INSPECTION',
-  CLOSED = 'CLOSED',
-  CANCELLED = 'CANCELLED',
-}
+export const ProjectStatus = {
+  INQUIRY: 'INQUIRY',
+  QUOTING: 'QUOTING',
+  CONFIRMED: 'CONFIRMED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  INSPECTION: 'INSPECTION',
+  CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
 // 狀態中文顯示名稱對照表
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {

@@ -68,13 +68,13 @@ public class ProjectServiceImpl implements ProjectService {
             List<Predicate> predicates = new ArrayList<>();
 
             if (StringUtils.hasText(clientName)) {
-                predicates.add(cb.like(root.get("clientName"), "%" + clientName + "%"));
+                predicates.add(cb.like(cb.lower(root.get("clientName")), "%" + clientName.toLowerCase() + "%"));
             }
             if (StringUtils.hasText(city)) {
-                predicates.add(cb.equal(root.get("city"), city));
+                predicates.add(cb.like(cb.lower(root.get("city")), "%" + city.toLowerCase() + "%"));
             }
             if (StringUtils.hasText(district)) {
-                predicates.add(cb.equal(root.get("district"), district));
+                predicates.add(cb.like(cb.lower(root.get("district")), "%" + district.toLowerCase() + "%"));
             }
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));

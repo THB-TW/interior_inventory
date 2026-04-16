@@ -5,6 +5,7 @@ import type { Project, ProjectListParams } from '@/types/project';
 import Topbar from '@/components/layout/Topbar';
 import ProjectFilters from '@/components/projects/ProjectFilters';
 import ProjectTable from '@/components/projects/ProjectTable';
+import ProjectCardList from '@/components/projects/ProjectCardList';
 import Pagination from '@/components/common/Pagination';
 import ProjectFormModal from '@/components/projects/ProjectFormModal';
 import ConfirmCancelDialog from '@/components/projects/ConfirmCancelDialog';
@@ -84,15 +85,31 @@ export default function ProjectListPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-[var(--color-border)] overflow-hidden">
-          <ProjectTable
-            data={data?.content ?? []}
-            isLoading={isLoading}
-            isError={isError}
-            errorMessage={error instanceof Error ? error.message : undefined}
-            onView={handleView}
-            onEdit={handleEdit}
-            onCancel={handleCancel}
-          />
+        {/* 桌面版：資料表格 (md 以上顯示) */}
+          <div className="hidden md:block">
+            <ProjectTable
+              data={data?.content ?? []}
+              isLoading={isLoading}
+              isError={isError}
+              errorMessage={error instanceof Error ? error.message : undefined}
+              onView={handleView}
+              onEdit={handleEdit}
+              onCancel={handleCancel}
+            />
+          </div>
+
+          {/* 手機版：Card 列表 (md 以下顯示) */}
+          <div className="md:hidden">
+            <ProjectCardList
+              data={data?.content ?? []}
+              isLoading={isLoading}
+              isError={isError}
+              errorMessage={error instanceof Error ? error.message : undefined}
+              onView={handleView}
+              onEdit={handleEdit}
+              onCancel={handleCancel}
+            />
+          </div>
 
           {data && (
             <Pagination

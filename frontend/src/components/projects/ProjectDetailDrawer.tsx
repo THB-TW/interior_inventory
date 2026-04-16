@@ -83,7 +83,7 @@ export default function ProjectDetailDrawer({ projectId, onClose, onEdit }: Proj
 
       {/* Drawer 本體：從右側滑入 */}
       <aside
-        className={`fixed top-0 right-0 h-full w-[420px] bg-white border-l border-[var(--color-border)] z-50 flex flex-col shadow-xl transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full md:w-[420px] bg-white border-l border-[var(--color-border)] z-50 flex flex-col shadow-xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
