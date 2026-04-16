@@ -1,0 +1,110 @@
+@startuml
+' === 使用者與角色 ===
+entity "users" as Users {
+  * id : BIGSERIAL
+  --
+  username : VARCHAR(50)
+  password : VARCHAR(255)
+  email : VARCHAR(100)
+  is_active : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity "roles" as Roles {
+  * id : BIGSERIAL
+  --
+  name : VARCHAR(50)
+  description : VARCHAR(255)
+}
+
+entity "user_roles" as UserRoles {
+  * user_id : BIGINT
+  * role_id : BIGINT
+}
+
+Users ||--o{ UserRoles
+Roles ||--o{ UserRoles
+
+' === 案件主檔 ===
+entity "cases" as Cases {
+  * id : BIGSERIAL
+  --
+  case_code : VARCHAR(30)          ' IP-202604-001
+  client_name : VARCHAR(100)
+  client_phone : VARCHAR(30)
+  site_address : VARCHAR(255)
+  status : VARCHAR(30)             ' 詢問 / 場刊 / 確認 / 進行中 / 檢查 / 結案
+  sales_user_id : BIGINT           ' 負責人（老闆/業務）
+  estimated_days : INTEGER
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+Users ||--o{ Cases : "sales_user_id"
+
+' === 料件 master ===
+entity "materials" as Materials {
+  * id : BIGSERIAL
+  --
+  name : VARCHAR(100)
+  unit : VARCHAR(20)
+  description : TEXT
+  default_price : NUMERIC(10,2)
+  is_active : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+' === 倉庫庫存 ===
+entity "warehouse_inventory" as WarehouseInventory {
+  * id : BIGSERIAL
+  --
+  material_id : BIGINT
+  quantity : INTEGER
+  location : VARCHAR(50)           ' 可選：倉庫區位，例如 A1-01
+  updated_at : TIMESTAMP
+}
+
+Materials ||--o{ WarehouseInventory
+
+' === 案件用料（鎖定 + 實際用量） ===
+entity "case_materials" as CaseMaterials {
+  * id : BIGSERIAL
+  --
+  case_id : BIGINT
+  material_id : BIGINT
+  planned_quantity : INTEGER       ' 預估用量（估價時）
+  locked_quantity : INTEGER        ' 已鎖定用量（案件確認後）
+  actual_quantity : INTEGER        ' 實際使用用量（完工後）
+  unit_price : NUMERIC(10,2)       ' 成本單價（可覆寫 default_price）
+  line_cost : NUMERIC(10,2)        ' 材料小計（實際）
+}
+
+Cases ||--o{ CaseMaterials
+Materials ||--o{ CaseMaterials
+
+entity "supplier_invoices" as SupplierInvoices {
+  * id : BIGSERIAL
+  --
+  supplier_name : VARCHAR(100)
+  invoice_number : VARCHAR(50)
+  invoice_date : DATE
+  total_amount : NUMERIC(10,2)
+}
+
+entity "supplier_invoice_items" as SupplierInvoiceItems {
+  * id : BIGSERIAL
+  --
+  supplier_invoice_id : BIGINT
+  material_id : BIGINT
+  description : VARCHAR(255)
+  shipped_quantity : INTEGER
+  billed_quantity : INTEGER
+  unit_price : NUMERIC(10,2)
+  line_amount : NUMERIC(10,2)
+  is_return : BOOLEAN
+}
+
+SupplierInvoices ||--o{ SupplierInvoiceItems
+Materials ||--o{ SupplierInvoiceItems
+
+@enduml
