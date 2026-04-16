@@ -5,7 +5,7 @@ JOIN users u ON ur.user_id = u.id
 JOIN roles r ON ur.role_id = r.id
 ORDER BY u.username, r.name;
 -- 檢查產品
-SELECT p.sku, p.name, i.quantity
+SELECT  p.name, i.quantity
 FROM products p
 JOIN inventory i ON i.product_id = p.id
 ORDER BY p.sku;

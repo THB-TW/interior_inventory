@@ -26,12 +26,14 @@ Users ||--o{ UserRoles
 Roles ||--o{ UserRoles
 
 ' === 案件主檔 ===
-entity "cases" as Cases {
+entity "projects" as Projects {
   * id : BIGSERIAL
   --
-  case_code : VARCHAR(30)          ' IP-202604-001
+  project_code : VARCHAR(30)          ' IP-202604-001
   client_name : VARCHAR(100)
   client_phone : VARCHAR(30)
+  city : VARCHAR(30)
+  district : VARCHAR(30)
   site_address : VARCHAR(255)
   status : VARCHAR(30)             ' 詢問 / 場刊 / 確認 / 進行中 / 檢查 / 結案
   sales_user_id : BIGINT           ' 負責人（老闆/業務）

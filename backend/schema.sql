@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS supplier_invoices;
 DROP TABLE IF EXISTS case_materials;
 DROP TABLE IF EXISTS warehouse_inventory;
 DROP TABLE IF EXISTS user_roles;
-DROP TABLE IF EXISTS cases;
+DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS materials;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS users;
@@ -35,11 +35,13 @@ CREATE TABLE user_roles (
 );
 
 -- === 案件主檔 ===
-CREATE TABLE cases (
+CREATE TABLE projects (
    id             BIGSERIAL PRIMARY KEY,
-   case_code      VARCHAR(30)  NOT NULL UNIQUE,
+   project_code      VARCHAR(30)  NOT NULL UNIQUE,
    client_name    VARCHAR(100) NOT NULL,
    client_phone   VARCHAR(30),
+   city				VARCHAR(30)	 NOT NULL,
+   district			VARCHAR(30),
    site_address   VARCHAR(255) NOT NULL,
    status         VARCHAR(30)  NOT NULL,
    sales_user_id  BIGINT       NOT NULL,
@@ -50,13 +52,12 @@ CREATE TABLE cases (
       FOREIGN KEY (sales_user_id) REFERENCES users (id)
 );
 
-CREATE INDEX idx_cases_status ON cases (status);
+CREATE INDEX idx_cases_status ON projects (status);
 
 -- === 料件 master ===
 CREATE TABLE materials (
     id            BIGSERIAL PRIMARY KEY,
     name          VARCHAR(100) NOT NULL,
-    sku           VARCHAR(50)  NOT NULL UNIQUE,
     unit          VARCHAR(20)  NOT NULL,
     description   TEXT,
     default_price NUMERIC(10,2),
@@ -88,7 +89,7 @@ CREATE TABLE case_materials (
     unit_price       NUMERIC(10,2),
     line_cost        NUMERIC(10,2),
     CONSTRAINT fk_case_materials_case
-        FOREIGN KEY (case_id)    REFERENCES cases (id),
+        FOREIGN KEY (case_id)    REFERENCES projects (id),
     CONSTRAINT fk_case_materials_material
         FOREIGN KEY (material_id) REFERENCES materials (id)
 );
