@@ -1,0 +1,69 @@
+@startuml
+allowmixing
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle rectangle
+
+actor "Frontend / Client" as client
+
+package "Controller Layer" {
+  class CaseController <<RestController>> {
+    + getAllCases(status: String): List<CaseListItemResponse>
+    + getCaseById(id: Long): CaseDetailResponse
+  }
+}
+
+package "Service Layer" {
+  interface CaseService <<Interface>> {
+    + getAllCases(status: CaseStatus): List<CaseListItemResponse>
+    + getCaseById(id: Long): CaseDetailResponse
+  }
+
+  class CaseServiceImpl <<Service>> {
+    - caseRepository: CaseRepository
+    + getAllCases(status: CaseStatus): List<CaseListItemResponse>
+    + getCaseById(id: Long): CaseDetailResponse
+    - mapToListItemResponse(caseEntity: Case): CaseListItemResponse
+    - mapToDetailResponse(caseEntity: Case): CaseDetailResponse
+  }
+  
+  CaseServiceImpl .up.|> CaseService : implements
+}
+
+package "Repository Layer" {
+  interface CaseRepository <<Repository>> {
+    + findByStatus(status: CaseStatus): List<Case>
+  }
+}
+
+package "Data & Object Models" {
+  class Case <<Entity>> {
+     - id: Long
+     - caseCode: String
+     - status: CaseStatus
+     ...
+  }
+  
+  class CaseListItemResponse <<DTO>>
+  class CaseDetailResponse <<DTO>>
+}
+
+database "Database (MariaDB)" as db
+
+' 依賴關係箭頭
+client --> CaseController : 1. HTTP Request
+CaseController --> CaseService : 2. 呼叫方法 (只依賴 Interface)
+CaseServiceImpl --> CaseRepository : 3. 請求特定條件資料
+
+CaseRepository -down-> db : 4. 執行 SQL (JPA)
+db -up-> CaseRepository : 5. 數據返回
+
+CaseRepository .up.> Case : 6. 封裝成 Entity 回傳
+CaseServiceImpl .down.> Case : 7. 取得 Entity
+
+CaseServiceImpl .down.> CaseListItemResponse : 8. Entity 轉換為 DTO
+CaseServiceImpl .down.> CaseDetailResponse : 8. Entity 轉換為 DTO
+
+CaseController .up.> CaseListItemResponse : 9. 拿到 DTO
+CaseController --> client : 10. 回傳 HTTP Response (JSON)
+
+@enduml
