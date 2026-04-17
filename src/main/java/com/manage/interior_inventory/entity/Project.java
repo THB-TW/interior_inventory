@@ -35,8 +35,11 @@ public class Project {
     @Column(name = "district", length = 30)
     private String district;
 
-    @Column(name = "site_address", nullable = false)
+    @Column(name = "site_address", length = 255, nullable = false)
     private String siteAddress;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     // 狀態 (Enum 方案 3)
     @Enumerated(EnumType.STRING)

@@ -90,6 +90,7 @@ export interface Project {
   city: string;
   district: string;
   addressLine: string;   // 對應後端 siteAddress
+  description: string;
   status: ProjectStatus;
   salesUserId: number;
   estimatedDays?: number;

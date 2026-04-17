@@ -62,6 +62,7 @@ CREATE TABLE projects (
    city				VARCHAR(30)	 NOT NULL,
    district			VARCHAR(30),
    site_address   VARCHAR(255) NOT NULL,
+   description    TEXT,
    status         VARCHAR(30)  NOT NULL,
    sales_user_id  BIGINT       NOT NULL,
    estimated_days INTEGER,
@@ -194,4 +195,4 @@ CREATE TABLE estimation_worker_items (
         FOREIGN KEY (estimation_id) REFERENCES project_estimations (id) ON DELETE CASCADE,
     CONSTRAINT fk_worker_item_worker
         FOREIGN KEY (worker_id) REFERENCES workers (id)
-);
+);

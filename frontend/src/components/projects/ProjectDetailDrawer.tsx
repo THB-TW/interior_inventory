@@ -176,12 +176,26 @@ export default function ProjectDetailDrawer({ projectId, onClose, onEdit }: Proj
 
               <hr className="border-[var(--color-border)]" />
 
-              {/* 客戶資訊 */}
+              {/* 聯絡資訊 */}
               <section className="flex flex-col gap-3">
-                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">客戶資訊</p>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">聯絡資訊</p>
                 <InfoRow icon={User} label="客戶姓名" value={project.clientName} />
-                <InfoRow icon={Phone} label="聯絡電話" value={project.clientPhone} />
+                <InfoRow icon={Phone} label="聯絡電話" value={project.clientPhone || '未提供'} />
               </section>
+
+              {/* 施作需求 */}
+              <>
+                <hr className="border-[var(--color-border)]" />
+                <section className="flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+                    <FileText size={14} />
+                    <p>客戶施作需求</p>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed shadow-sm">
+                    {project.description || '客戶未填寫具體需求'}
+                  </div>
+                </section>
+              </>
 
               <hr className="border-[var(--color-border)]" />
 

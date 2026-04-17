@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #78716c; /* 暖灰石色 */
+  --color-primary-dark: #57534e;
+  --color-secondary: #fdfbf7; /* 米白 */
+  --color-accent: #27272a; /* 深灰近黑 */
+}
+
+@layer base {
+  body {
+    background-color: var(--color-secondary);
+    color: var(--color-accent);
+    font-family: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+  }
+}

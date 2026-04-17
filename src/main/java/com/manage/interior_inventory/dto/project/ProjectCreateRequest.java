@@ -15,5 +15,7 @@ public record ProjectCreateRequest(
 
                 @NotBlank(message = "詳細地址為必填") @Size(max = 255, message = "詳細地址不能超過 255 字元") String siteAddress,
 
+                String description,
+
                 @NotNull(message = "負責業務(Sales)為必填") Long salesUserId) {
 }

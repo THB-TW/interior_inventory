@@ -54,6 +54,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .city(request.city())
                 .district(request.district())
                 .siteAddress(request.siteAddress())
+                .description(request.description())
                 .salesUserId(request.salesUserId())
                 .status(ProjectStatus.INQUIRY) // 初始狀態
                 .build();
@@ -109,6 +110,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setCity(request.city());
         project.setDistrict(request.district());
         project.setSiteAddress(request.siteAddress());
+        project.setDescription(request.description());
         project.setSalesUserId(request.salesUserId());
 
         Project updatedProject = projectRepository.save(project);
