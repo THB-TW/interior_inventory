@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProjectById, updateProjectStatus } from '@/services/projectService';
+import { getEstimation } from '@/services/estimationService';
 import {
   ProjectStatus,
   PROJECT_STATUS_LABELS,
   PROJECT_STATUS_TRANSITIONS,
 } from '@/types/project';
 import StatusBadge from '@/components/common/StatusBadge';
-import { X, MapPin, Phone, User, Calendar, ArrowRight, Loader2, Package, FileText, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, MapPin, Phone, User, Calendar, ArrowRight, Loader2, Package, FileText, DollarSign, Calculator, TrendingUp } from 'lucide-react';
 
 interface ProjectDetailDrawerProps {
   projectId: number | null;  // null 代表關閉
@@ -46,12 +48,20 @@ function PlaceholderSection({ icon: Icon, title, desc }: { icon: React.ElementTy
 
 export default function ProjectDetailDrawer({ projectId, onClose, onEdit }: ProjectDetailDrawerProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const isOpen = projectId !== null;
 
   // 查詢單一案件詳情
   const { data: project, isLoading } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => getProjectById(projectId!),
+    enabled: isOpen,
+  });
+
+  // 查詢案件估價狀態
+  const { data: estimation } = useQuery({
+    queryKey: ['estimation', projectId],
+    queryFn: () => getEstimation(projectId!),
     enabled: isOpen,
   });
 
@@ -204,12 +214,50 @@ export default function ProjectDetailDrawer({ projectId, onClose, onEdit }: Proj
 
               <hr className="border-[var(--color-border)]" />
 
-              {/* 未來功能預留區 */}
+              {/* 未來功能與估價 */}
               <section className="flex flex-col gap-2">
-                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-1">擴充功能（開發中）</p>
-                <PlaceholderSection icon={FileText} title="報價版本" desc="查看此案件的報價歷程與定稿版本" />
-                <PlaceholderSection icon={Package} title="材料清單" desc="本案使用的材料品項與數量" />
-                <PlaceholderSection icon={DollarSign} title="費用結算" desc="工程費用、材料費、師傅工資統計" />
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">擴充功能與估價</p>
+                  
+                  {/* 提供給老闆的估價按鈕 */}
+                  <button
+                    onClick={() => {
+                        onClose();
+                        navigate(`/projects/${project.id}/estimate`);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-medium bg-[var(--color-accent)] text-white px-3 py-1.5 rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    <Calculator size={14} />
+                    {estimation ? '重新估價' : '估價'}
+                  </button>
+                </div>
+                
+                {/* 顯示估價總金額 */}
+                {estimation && (
+                  <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-indigo-900">
+                      <Calculator size={18} />
+                      <span className="font-semibold text-sm">最新估價總額:</span>
+                    </div>
+                    <span className="text-lg font-bold text-indigo-700">${estimation.totalAmount.toLocaleString()}</span>
+                  </div>
+                )}
+
+                <PlaceholderSection 
+                  icon={User} 
+                  title="師傅成本" 
+                  desc={estimation ? `$${estimation.laborCost.toLocaleString()}` : "尚未估算工程工資"} 
+                />
+                <PlaceholderSection 
+                  icon={Package} 
+                  title="材料成本" 
+                  desc={estimation ? `$${(estimation.totalAmount - estimation.laborCost - estimation.profit).toLocaleString()}` : "本案尚未估算材料費用"} 
+                />
+                <PlaceholderSection 
+                  icon={TrendingUp} 
+                  title="利潤" 
+                  desc={estimation ? `$${estimation.profit.toLocaleString()}` : "案件利潤結算"} 
+                />
               </section>
 
             </div>

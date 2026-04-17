@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import ProjectListPage from '@/pages/projects/ProjectListPage';
+import ProjectEstimationPage from '@/pages/projects/ProjectEstimationPage';
 import PlaceholderPage from '@/components/common/PlaceholderPage';
 
 const router = createBrowserRouter([
@@ -11,6 +12,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'projects', element: <ProjectListPage /> },
+      { path: 'projects/:id/estimate', element: <ProjectEstimationPage /> },
       { path: 'inventory', element: <PlaceholderPage title="庫存管理" /> },
       { path: 'quotes', element: <PlaceholderPage title="報價管理" /> },
       { path: 'finance', element: <PlaceholderPage title="財務管理" /> },

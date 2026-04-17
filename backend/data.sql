@@ -161,3 +161,36 @@ VALUES
    '儷士 矽酸鈣 6mm 3*6(日本)',
    40, 40, 385.00,
    15400.00, FALSE);
+
+-- === 預設師傅名單 ===
+INSERT INTO workers (nickname, daily_wage) VALUES ('阿信師', 3000);
+INSERT INTO workers (nickname, daily_wage) VALUES ('木工老張', 3500);
+INSERT INTO workers (nickname, daily_wage) VALUES ('水電阿吉', 2800);
+
+-- === 測試用案件估價單 ===
+INSERT INTO project_estimations (project_id, labor_cost, profit, total_amount)
+SELECT p.id, 6500, 10000, 26500
+FROM projects p WHERE p.project_code = 'IP-202604-001'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO estimation_items (estimation_id, material_name, quantity, unit_price, subtotal)
+SELECT e.id, '水泥包', 10, 200, 2000
+FROM project_estimations e JOIN projects p ON e.project_id = p.id WHERE p.project_code = 'IP-202604-001';
+
+INSERT INTO estimation_items (estimation_id, material_name, quantity, unit_price, subtotal)
+SELECT e.id, '地磚(坪)', 10, 800, 8000
+FROM project_estimations e JOIN projects p ON e.project_id = p.id WHERE p.project_code = 'IP-202604-001';
+
+INSERT INTO estimation_worker_items (estimation_id, worker_id, days, subtotal)
+SELECT e.id, w.id, 1, 3000
+FROM project_estimations e
+JOIN projects p ON e.project_id = p.id
+CROSS JOIN workers w
+WHERE p.project_code = 'IP-202604-001' AND w.nickname = '阿信師';
+
+INSERT INTO estimation_worker_items (estimation_id, worker_id, days, subtotal)
+SELECT e.id, w.id, 1, 3500
+FROM project_estimations e
+JOIN projects p ON e.project_id = p.id
+CROSS JOIN workers w
+WHERE p.project_code = 'IP-202604-001' AND w.nickname = '木工老張';

@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/order_inventory_db
     username: order_user
-    password: ${DB_PASSWORD}
+    password: 123 #${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,8 +22,8 @@ server:
 
 line:
   bot:
-    channel-secret: ${LINE_CHANNEL_SECRET:test}
-    channel-token: ${LINE_CHANNEL_TOKEN:test}
+    channel-secret: 34e8de1c69d5b3bd6a3d18483445359b #${LINE_CHANNEL_SECRET:test}
+    channel-token: rJK2HL1aYtT1o1GwnvmnRwtZSW2UAodGsLf5AqGZ4ML3/+9L/VbmPg4oNAr8HLoqgxB72xesB4L0y/ezCggpMVIVW1+dxO1pSG+WaeZb9J0wnOFmM033oF5xaVPjCkRIv/q/BnjX13wC1dvBM/A2kAdB04t89/1O/w1cDnyilFU= #${LINE_CHANNEL_TOKEN:test}
     handler:
       path: /webhook/line
 

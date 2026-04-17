@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS estimation_worker_items;
+DROP TABLE IF EXISTS estimation_items;
+DROP TABLE IF EXISTS project_estimations;
+DROP TABLE IF EXISTS workers;
 DROP TABLE IF EXISTS supplier_invoice_items;
 DROP TABLE IF EXISTS supplier_invoices;
 DROP TABLE IF EXISTS case_materials;
@@ -146,3 +150,48 @@ CREATE INDEX idx_supplier_items_invoice
     ON supplier_invoice_items (supplier_invoice_id);
 CREATE INDEX idx_supplier_items_material
     ON supplier_invoice_items (material_id);
+
+-- === 師傅名單 ===
+CREATE TABLE workers (
+    id          BIGSERIAL PRIMARY KEY,
+    nickname    VARCHAR(50) NOT NULL,
+    daily_wage  INTEGER NOT NULL
+);
+
+-- === 案件估價主檔 ===
+CREATE TABLE project_estimations (
+    id             BIGSERIAL PRIMARY KEY,
+    project_id     BIGINT NOT NULL UNIQUE,
+    labor_cost     INTEGER NOT NULL,
+    profit         INTEGER NOT NULL,
+    total_amount   INTEGER NOT NULL,
+    created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_estimation_project
+        FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
+);
+
+-- === 估價材料明細 ===
+CREATE TABLE estimation_items (
+    id             BIGSERIAL PRIMARY KEY,
+    estimation_id  BIGINT NOT NULL,
+    material_name  VARCHAR(100) NOT NULL,
+    quantity       INTEGER NOT NULL,
+    unit_price     INTEGER NOT NULL,
+    subtotal       INTEGER NOT NULL,
+    CONSTRAINT fk_estimation_item
+        FOREIGN KEY (estimation_id) REFERENCES project_estimations (id) ON DELETE CASCADE
+);
+
+-- === 估價師傅明細 ===
+CREATE TABLE estimation_worker_items (
+    id             BIGSERIAL PRIMARY KEY,
+    estimation_id  BIGINT NOT NULL,
+    worker_id      BIGINT NOT NULL,
+    days           NUMERIC(5,2) NOT NULL,
+    subtotal       INTEGER NOT NULL,
+    CONSTRAINT fk_estimation_worker
+        FOREIGN KEY (estimation_id) REFERENCES project_estimations (id) ON DELETE CASCADE,
+    CONSTRAINT fk_worker_item_worker
+        FOREIGN KEY (worker_id) REFERENCES workers (id)
+);
