@@ -85,7 +85,7 @@ export default function ProjectCardList({
               )}
 
               <p className="text-xs text-[var(--color-text-muted)] mt-1 truncate">
-                📍 {[project.city, project.district, project.addressLine].filter(Boolean).join('')}
+                📍 {project.city}{project.district}{project.addressLine}
               </p>
 
               <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5">
