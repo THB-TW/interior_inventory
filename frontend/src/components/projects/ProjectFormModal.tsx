@@ -7,6 +7,7 @@ import { createProject, updateProject } from '@/services/projectService';
 import type { Project } from '@/types/project';
 import { X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import FormField from '@/components/common/FormField';
 
 // ── Zod 驗證 Schema ────────────────────────────────────────────
 const schema = z.object({
@@ -25,30 +26,6 @@ interface ProjectFormModalProps {
   open: boolean;
   editTarget?: Project | null;  // 有值 = 編輯模式，null = 新增模式
   onClose: () => void;
-}
-
-// ── 表單欄位元件（避免重複 className）──────────────────────────
-function Field({
-  label,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-[var(--color-text-secondary)]">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
-  );
 }
 
 const inputClass = (hasError?: boolean) =>
@@ -135,34 +112,34 @@ export default function ProjectFormModal({
           className="p-5 flex flex-col gap-3.5"
         >
           <div className="grid grid-cols-2 gap-3">
-            <Field label="客戶姓名" required error={errors.clientName?.message}>
+            <FormField label="客戶姓名" required error={errors.clientName?.message}>
               <input {...register('clientName')} placeholder="王大明" className={inputClass(!!errors.clientName)} />
-            </Field>
-            <Field label="聯絡電話" error={errors.clientPhone?.message}>
+            </FormField>
+            <FormField label="聯絡電話" error={errors.clientPhone?.message}>
               <input {...register('clientPhone')} placeholder="09xx-xxx-xxx" className={inputClass(!!errors.clientPhone)} />
-            </Field>
+            </FormField>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="縣市" required error={errors.city?.message}>
+            <FormField label="縣市" required error={errors.city?.message}>
               <input {...register('city')} placeholder="台北市" className={inputClass(!!errors.city)} />
-            </Field>
-            <Field label="行政區" error={errors.district?.message}>
+            </FormField>
+            <FormField label="行政區" error={errors.district?.message}>
               <input {...register('district')} placeholder="信義區" className={inputClass(!!errors.district)} />
-            </Field>
+            </FormField>
           </div>
 
-          <Field label="詳細地址" required error={errors.siteAddress?.message}>
+          <FormField label="詳細地址" required error={errors.siteAddress?.message}>
             <input {...register('siteAddress')} placeholder="信義路五段 7 號" className={inputClass(!!errors.siteAddress)} />
-          </Field>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="負責業務 ID" required error={errors.salesUserId?.message}>
+            <FormField label="負責業務 ID" required error={errors.salesUserId?.message}>
               <input type="number" {...register('salesUserId')} placeholder="1" className={inputClass(!!errors.salesUserId)} />
-            </Field>
-            <Field label="預計工期（天）" error={errors.estimatedDays?.message}>
+            </FormField>
+            <FormField label="預計工期（天）" error={errors.estimatedDays?.message}>
               <input type="number" {...register('estimatedDays')} placeholder="30" className={inputClass(!!errors.estimatedDays)} />
-            </Field>
+            </FormField>
           </div>
 
           {/* 後端錯誤訊息 */}
