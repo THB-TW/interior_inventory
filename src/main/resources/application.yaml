@@ -20,6 +20,13 @@ spring:
 server:
   port: 8080
 
+line:
+  bot:
+    channel-secret: ${LINE_CHANNEL_SECRET:test}
+    channel-token: ${LINE_CHANNEL_TOKEN:test}
+    handler:
+      path: /webhook/line
+
 logging:
   level:
     root: INFO
