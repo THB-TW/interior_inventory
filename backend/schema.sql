@@ -11,15 +11,16 @@ DROP TABLE IF EXISTS customer_inquiry;
 
 -- === 客戶詢問單 ===
 CREATE TABLE customer_inquiry (
-    id             BIGSERIAL PRIMARY KEY,
-    line_user_id   VARCHAR(255) NOT NULL,
-    message        TEXT NOT NULL,
-    status         VARCHAR(30) NOT NULL,
-    name           VARCHAR(100),
-    phone          VARCHAR(30),
-    address        VARCHAR(255),
-    work_content   TEXT,
-    created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+    id               BIGSERIAL PRIMARY KEY,
+    line_user_id     VARCHAR(255) NOT NULL,
+    line_user_name   VARCHAR(100),
+    message          TEXT NOT NULL,
+    status           VARCHAR(30) NOT NULL,
+    name             VARCHAR(100),
+    phone            VARCHAR(30),
+    address          VARCHAR(255),
+    work_content     TEXT,
+    created_at       TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- === 使用者與角色 ===

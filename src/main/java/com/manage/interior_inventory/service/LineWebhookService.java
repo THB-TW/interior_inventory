@@ -40,12 +40,12 @@ public class LineWebhookService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final String LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply";
+    private static final String LINE_PROFILE_URL = "https://api.line.me/v2/bot/profile/";
 
     public boolean validateSignature(String body, String signature) {
         return signatureValidator.validateSignature(body, config.getChannelSecret(), signature);
     }
 
-    @Transactional
     public void processWebhookPayload(String body) {
         try {
             LineWebhookPayload payload = objectMapper.readValue(body, LineWebhookPayload.class);
@@ -59,8 +59,13 @@ public class LineWebhookService {
                     String text = event.getMessage().getText();
                     String replyToken = event.getReplyToken();
 
-                    CustomerInquiry inquiry = createInquiry(userId, text);
+                    // Do external HTTP call outside transaction
+                    String lineUserName = fetchLineUserName(userId);
 
+                    // Do DB save in transaction
+                    saveInquiry(userId, text, lineUserName);
+
+                    // Do external HTTP call outside transaction
                     if (StringUtils.hasText(replyToken)) {
                         sendGuideMessage(replyToken);
                     }
@@ -75,9 +80,11 @@ public class LineWebhookService {
         }
     }
 
-    private CustomerInquiry createInquiry(String userId, String text) {
+    @Transactional
+    public CustomerInquiry saveInquiry(String userId, String text, String lineUserName) {
         CustomerInquiry inquiry = CustomerInquiry.builder()
                 .lineUserId(userId)
+                .lineUserName(lineUserName)
                 .message(text)
                 .status(InquiryStatus.PENDING)
                 .build();
@@ -112,6 +119,29 @@ public class LineWebhookService {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             return matcher.group(1).trim();
+        }
+        return null;
+    }
+
+    private String fetchLineUserName(String userId) {
+        if (!StringUtils.hasText(userId) || !StringUtils.hasText(config.getChannelToken())) {
+            return null;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(config.getChannelToken());
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        try {
+            var response = restTemplate.exchange(LINE_PROFILE_URL + userId, HttpMethod.GET, request, String.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                var jsonNode = objectMapper.readTree(response.getBody());
+                if (jsonNode.has("displayName")) {
+                    return jsonNode.get("displayName").asText();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch LINE user profile for userId: {}. Reason: {}", userId, e.getMessage());
         }
         return null;
     }
