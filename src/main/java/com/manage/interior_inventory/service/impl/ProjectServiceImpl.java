@@ -8,6 +8,7 @@ import com.manage.interior_inventory.repository.ProjectRepository;
 import com.manage.interior_inventory.service.ProjectService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
@@ -40,7 +42,7 @@ public class ProjectServiceImpl implements ProjectService {
                 String seqStr = maxCode.substring(prefix.length());
                 sequence = Integer.parseInt(seqStr) + 1;
             } catch (NumberFormatException e) {
-                // 如果解析失敗則維持 1
+                log.warn("Failed to parse sequence from maxCode: {}, defaulting to 1", maxCode, e);
             }
         }
         String generatedCaseCode = prefix + String.format("%03d", sequence);
