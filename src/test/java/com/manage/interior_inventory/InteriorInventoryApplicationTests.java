@@ -1,4 +1,4 @@
-package com.sillysome.interior_inventory;
+package com.manage.interior_inventory;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
