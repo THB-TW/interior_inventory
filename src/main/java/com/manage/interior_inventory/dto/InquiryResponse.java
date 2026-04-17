@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class InquiryResponse {
     private Long id;
     private String lineUserId;
+    private String lineUserName;
     private String message;
     private InquiryStatus status;
     private String name;
@@ -27,6 +28,7 @@ public class InquiryResponse {
         return InquiryResponse.builder()
                 .id(entity.getId())
                 .lineUserId(entity.getLineUserId())
+                .lineUserName(entity.getLineUserName())
                 .message(entity.getMessage())
                 .status(entity.getStatus())
                 .name(entity.getName())

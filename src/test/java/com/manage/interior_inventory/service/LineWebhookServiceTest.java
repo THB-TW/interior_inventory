@@ -17,6 +17,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +40,9 @@ class LineWebhookServiceTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     @InjectMocks
     private LineWebhookService lineWebhookService;
 
@@ -41,6 +50,7 @@ class LineWebhookServiceTest {
     void setUp() {
         // Since we injected the real ObjectMapper in the real code, we should set a real one here.
         ReflectionTestUtils.setField(lineWebhookService, "objectMapper", new ObjectMapper());
+        ReflectionTestUtils.setField(lineWebhookService, "restTemplate", restTemplate);
     }
 
     @Test
@@ -69,6 +79,15 @@ class LineWebhookServiceTest {
                 """;
 
         when(inquiryRepository.save(any(CustomerInquiry.class))).thenAnswer(i -> i.getArgument(0));
+        when(config.getChannelToken()).thenReturn("mockToken");
+
+        String mockProfileResponse = "{\"displayName\": \"張老闆的LINE\"}";
+        when(restTemplate.exchange(
+                eq("https://api.line.me/v2/bot/profile/U4af4980629..."),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(new ResponseEntity<>(mockProfileResponse, HttpStatus.OK));
 
         lineWebhookService.processWebhookPayload(jsonPayload);
 
@@ -78,6 +97,7 @@ class LineWebhookServiceTest {
         CustomerInquiry savedInquiry = captor.getValue();
         assertNotNull(savedInquiry);
         assertEquals("U4af4980629...", savedInquiry.getLineUserId());
+        assertEquals("張老闆的LINE", savedInquiry.getLineUserName());
         assertEquals("張三", savedInquiry.getName());
         assertEquals("0912345678", savedInquiry.getPhone());
         assertEquals("台北市", savedInquiry.getAddress());

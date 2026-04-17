@@ -22,6 +22,9 @@ public class CustomerInquiry {
     @Column(name = "line_user_id", nullable = false)
     private String lineUserId;
 
+    @Column(name = "line_user_name", length = 100)
+    private String lineUserName;
+
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
 
