@@ -23,3 +23,24 @@ export interface WarehouseInventory {
   remarks: string;
   updatedAt: string;
 }
+
+export interface WarehouseInventoryRequest {
+  materialId: number;
+  quantity: number;
+  location?: string;
+  status: InventoryStatus;
+  remarks?: string;
+}
+
+export interface InventorySuggestionResponse {
+  inventoryId: number;
+  materialId: number;
+  materialName: string;
+  materialUnit: string;
+  availableQuantity: number;
+  location: string;
+  projectId: number;
+  projectName: string;
+  projectAddress: string;
+  plannedQuantity: number;
+}
