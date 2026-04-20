@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,18 +23,20 @@ public class WarehouseInventory {
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
 
-    @Column(name = "quantity", nullable = false)
-    private BigDecimal quantity;
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer quantity = 0;
 
-    @Column(name = "location", length = 50)
+    @Column(length = 50)
     private String location;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private WarehouseStatus status = WarehouseStatus.AVAILABLE;
+    @Column(length = 30, nullable = false)
+    @Builder.Default
+    private InventoryStatus status = InventoryStatus.AVAILABLE;
 
-    @Column(name = "note", columnDefinition = "TEXT")
-    private String note;
+    @Column(length = 255)
+    private String remarks;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)

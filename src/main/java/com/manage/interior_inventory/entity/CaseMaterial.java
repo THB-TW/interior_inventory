@@ -20,24 +20,27 @@ public class CaseMaterial {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "case_id", nullable = false)
-    private Project project; // The table says `cases` conceptually but maps to `projects`
+    private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
 
     @Column(name = "planned_quantity", nullable = false)
-    private BigDecimal plannedQuantity;
+    @Builder.Default
+    private Integer plannedQuantity = 0;
 
     @Column(name = "locked_quantity", nullable = false)
-    private BigDecimal lockedQuantity;
+    @Builder.Default
+    private Integer lockedQuantity = 0;
 
     @Column(name = "actual_quantity", nullable = false)
-    private BigDecimal actualQuantity;
+    @Builder.Default
+    private Integer actualQuantity = 0;
 
-    @Column(name = "unit_price")
+    @Column(name = "unit_price", precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "line_cost")
+    @Column(name = "line_cost", precision = 10, scale = 2)
     private BigDecimal lineCost;
 }

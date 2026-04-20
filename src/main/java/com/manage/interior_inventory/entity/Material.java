@@ -20,22 +20,23 @@ public class Material {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "unit", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String unit;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "default_price")
+    @Column(name = "default_price", precision = 10, scale = 2)
     private BigDecimal defaultPrice;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
+    @Builder.Default
+    private Boolean isActive = true;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

@@ -108,10 +108,12 @@ class GlobalExceptionHandlerTest {
         }
 
         @GetMapping("/test/validation")
-        public void throwValidation() throws MethodArgumentNotValidException {
+        public void throwValidation() throws MethodArgumentNotValidException, NoSuchMethodException {
             BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "object");
             bindingResult.addError(new FieldError("object", "field", "error message"));
-            throw new MethodArgumentNotValidException(null, bindingResult);
+            org.springframework.core.MethodParameter methodParameter = new org.springframework.core.MethodParameter(
+                this.getClass().getMethod("throwValidation"), -1);
+            throw new MethodArgumentNotValidException(methodParameter, bindingResult);
         }
     }
 }
