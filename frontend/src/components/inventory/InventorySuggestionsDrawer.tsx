@@ -1,6 +1,6 @@
-import React from 'react';
+
 import { X, Lightbulb, MapPin, Pickaxe } from 'lucide-react';
-import { InventorySuggestionResponse } from '@/types/inventory';
+import type { InventorySuggestionResponse } from '@/types/inventory';
 
 interface InventorySuggestionsDrawerProps {
   isOpen: boolean;

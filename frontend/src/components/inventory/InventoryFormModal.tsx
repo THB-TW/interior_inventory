@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { InventoryStatus, InventoryStatusConfig, WarehouseInventoryRequest, WarehouseInventory } from '@/types/inventory';
+import { InventoryStatus, InventoryStatusConfig } from '@/types/inventory';
+import type { WarehouseInventoryRequest, WarehouseInventory } from '@/types/inventory';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { ApiResponse } from '@/types/project';
+import apiClient from '@/lib/apiClient'
 
 interface Material {
   id: number;
@@ -24,7 +24,7 @@ export default function InventoryFormModal({ isOpen, onClose, onSubmit, initialD
     materialId: 0,
     quantity: 0,
     location: '',
-    status: InventoryStatus.AVAILABLE,
+    status: InventoryStatus.IN_STORAGE,
     remarks: '',
   });
 
@@ -33,8 +33,8 @@ export default function InventoryFormModal({ isOpen, onClose, onSubmit, initialD
     queryFn: async () => {
       // Assuming a generic material endpoint exists or fallback to static list if not
       try {
-        const response = await axios.get<ApiResponse<Material[]>>('/api/materials');
-        return response.data.data || [];
+        const response = await apiClient.get<Material[]>('/api/materials');
+        return response.data || [];
       } catch (e) {
         // Fallback for demo purposes if endpoint doesn't exist
         return [

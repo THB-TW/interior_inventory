@@ -11,6 +11,8 @@
     --color-accent: #3b5bdb;
     --color-accent-light: #eef2ff;
     --sidebar-width: 240px;
+    --color-primary: #3b5bdb;
+    --color-primary-hover: #2f4ac7;
   }
 
   * {

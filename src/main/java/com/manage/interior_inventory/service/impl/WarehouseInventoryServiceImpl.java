@@ -97,7 +97,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
 
         for (WarehouseInventory inventory : availableInventories) {
             // 2. Find active needs for this material
-            List<CaseMaterial> activeNeeds = caseMaterialRepository.findActiveNeedsByMaterialId(inventory.getMaterial().getId());
+            List<CaseMaterial> activeNeeds = caseMaterialRepository
+                    .findActiveNeedsByMaterialId(inventory.getMaterial().getId());
 
             for (CaseMaterial need : activeNeeds) {
                 // If inventory has some quantity, consider it a match
@@ -110,7 +111,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                             .availableQuantity(inventory.getQuantity())
                             .location(inventory.getLocation())
                             .projectId(need.getProject().getId())
-                            .projectName(need.getProject().getClientName() + " (" + need.getProject().getProjectCode() + ")")
+                            .projectName(
+                                    need.getProject().getClientName() + " (" + need.getProject().getProjectCode() + ")")
                             .projectAddress(need.getProject().getSiteAddress())
                             .plannedQuantity(need.getPlannedQuantity())
                             .build());
@@ -130,7 +132,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .orElseThrow(() -> new BusinessException("找不到指定的專案 ID: " + projectId));
 
         if (inventory.getStatus() != InventoryStatus.AVAILABLE) {
-             throw new BusinessException("庫存非可用狀態，無法徵用");
+            throw new BusinessException("庫存非可用狀態，無法徵用");
         }
 
         inventory.setStatus(InventoryStatus.IN_USE);

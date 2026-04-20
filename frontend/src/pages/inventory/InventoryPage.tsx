@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PackageSearch, Boxes, AlertCircle, Search, Filter, Plus, Lightbulb, Edit, Trash2 } from 'lucide-react';
 import { inventoryService } from '@/services/inventoryService';
-import { InventoryStatus, InventoryStatusConfig, WarehouseInventory, WarehouseInventoryRequest } from '@/types/inventory';
+import { InventoryStatus, InventoryStatusConfig } from '@/types/inventory';
+import type { WarehouseInventory, WarehouseInventoryRequest } from '@/types/inventory';
 import dayjs from 'dayjs';
 import InventoryFormModal from '@/components/inventory/InventoryFormModal';
 import InventorySuggestionsDrawer from '@/components/inventory/InventorySuggestionsDrawer';
@@ -63,7 +64,7 @@ export default function InventoryPage() {
 
   const filteredInventory = inventoryList?.filter(item => {
     const matchSearch = item.materialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        item.location?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.location?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = statusFilter === '' || item.status === statusFilter;
     return matchSearch && matchStatus;
   }) || [];
@@ -106,33 +107,33 @@ export default function InventoryPage() {
           </div>
         </div>
         <div className="flex gap-3">
-           <button
-             onClick={() => setIsDrawerOpen(true)}
-             className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors font-medium border border-amber-200"
-           >
-             <Lightbulb size={18} className="fill-amber-400" />
-             智能媒合
-           </button>
-           <button
-             onClick={handleOpenCreate}
-             className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white hover:bg-opacity-90 rounded-lg transition-colors font-medium shadow-sm"
-           >
-             <Plus size={18} />
-             新增庫存
-           </button>
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors font-medium border border-amber-200"
+          >
+            <Lightbulb size={18} className="fill-amber-400" />
+            智能媒合
+          </button>
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white hover:bg-opacity-90 rounded-lg transition-colors font-medium shadow-sm"
+          >
+            <Plus size={18} />
+            新增庫存
+          </button>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
-        
+
         {/* Toolbar */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="搜尋材料名稱或儲位..." 
+            <input
+              type="text"
+              placeholder="搜尋材料名稱或儲位..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
@@ -147,7 +148,7 @@ export default function InventoryPage() {
             >
               <option value="">所有狀態</option>
               {Object.values(InventoryStatus).map(status => (
-                 <option key={status} value={status}>{InventoryStatusConfig[status as InventoryStatus].label}</option>
+                <option key={status} value={status}>{InventoryStatusConfig[status as InventoryStatus].label}</option>
               ))}
             </select>
           </div>
@@ -161,9 +162,9 @@ export default function InventoryPage() {
           </div>
         ) : error ? (
           <div className="bg-red-50 text-red-600 p-6 rounded-xl border border-red-100 flex flex-col items-center justify-center text-center">
-             <AlertCircle size={32} className="mb-2 text-red-500" />
-             <p className="font-bold mb-1">無法取得庫存資料</p>
-             <p className="text-sm">請確認後端服務是否啟動，或是再試一次。</p>
+            <AlertCircle size={32} className="mb-2 text-red-500" />
+            <p className="font-bold mb-1">無法取得庫存資料</p>
+            <p className="text-sm">請確認後端服務是否啟動，或是再試一次。</p>
           </div>
         ) : filteredInventory.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-12 flex flex-col items-center justify-center text-slate-500 shadow-sm">
@@ -199,7 +200,7 @@ export default function InventoryPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-slate-600 font-medium">
-                           {item.location || '-'}
+                          {item.location || '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -219,20 +220,20 @@ export default function InventoryPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <button
-                             onClick={() => handleOpenEdit(item)}
-                             className="p-1 text-slate-400 hover:text-[var(--color-primary)] transition-colors"
-                             title="編輯"
-                           >
-                             <Edit size={16} />
-                           </button>
-                           <button
-                             onClick={() => handleDelete(item.id)}
-                             className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                             title="刪除"
-                           >
-                             <Trash2 size={16} />
-                           </button>
+                          <button
+                            onClick={() => handleOpenEdit(item)}
+                            className="p-1 text-slate-400 hover:text-[var(--color-primary)] transition-colors"
+                            title="編輯"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                            title="刪除"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
