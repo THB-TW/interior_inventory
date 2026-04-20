@@ -91,6 +91,8 @@ CREATE TABLE warehouse_inventory (
     material_id BIGINT    NOT NULL,
     quantity    INTEGER   NOT NULL DEFAULT 0,
     location    VARCHAR(50),
+    status      VARCHAR(30) NOT NULL DEFAULT 'AVAILABLE',
+    remarks     VARCHAR(255),
     updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_inventory_material
         FOREIGN KEY (material_id) REFERENCES materials (id)
