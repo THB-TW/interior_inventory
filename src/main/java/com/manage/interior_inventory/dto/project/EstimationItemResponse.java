@@ -7,15 +7,13 @@ public record EstimationItemResponse(
         String materialName,
         Integer quantity,
         Integer unitPrice,
-        Integer subtotal
-) {
+        Integer subtotal) {
     public static EstimationItemResponse fromEntity(EstimationItem item) {
         return new EstimationItemResponse(
                 item.getId(),
                 item.getMaterialName(),
                 item.getQuantity(),
                 item.getUnitPrice(),
-                item.getSubtotal()
-        );
+                item.getSubtotal());
     }
 }

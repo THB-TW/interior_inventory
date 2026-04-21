@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PackageSearch, Boxes, AlertCircle, Search, Filter, Plus, Lightbulb, Edit, Trash2 } from 'lucide-react';
 import { inventoryService } from '@/services/inventoryService';
-import { InventoryStatus, InventoryStatusConfig } from '@/types/inventory';
+import { WarehouseStatus, WarehouseStatusConfig } from '@/types/inventory';
 import type { WarehouseInventory, WarehouseInventoryRequest } from '@/types/inventory';
 import dayjs from 'dayjs';
 import InventoryFormModal from '@/components/inventory/InventoryFormModal';
@@ -10,7 +10,7 @@ import InventorySuggestionsDrawer from '@/components/inventory/InventorySuggesti
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<InventoryStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<WarehouseStatus | ''>('');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<WarehouseInventory | null>(null);
@@ -143,12 +143,12 @@ export default function InventoryPage() {
             <Filter size={18} className="text-slate-400" />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as InventoryStatus | '')}
+              onChange={(e) => setStatusFilter(e.target.value as WarehouseStatus | '')}
               className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 w-full sm:w-auto justify-center outline-none"
             >
               <option value="">所有狀態</option>
-              {Object.values(InventoryStatus).map(status => (
-                <option key={status} value={status}>{InventoryStatusConfig[status as InventoryStatus].label}</option>
+              {Object.values(WarehouseStatus).map(status => (
+                <option key={status} value={status}>{WarehouseStatusConfig[status as WarehouseStatus].label}</option>
               ))}
             </select>
           </div>
@@ -204,8 +204,8 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${InventoryStatusConfig[item.status].color}`}>
-                          {InventoryStatusConfig[item.status].label}
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${WarehouseStatusConfig[item.status].color}`}>
+                          {WarehouseStatusConfig[item.status].label}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-slate-500">

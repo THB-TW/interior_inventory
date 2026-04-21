@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { InventoryStatus, InventoryStatusConfig } from '@/types/inventory';
+import { WarehouseStatus, WarehouseStatusConfig } from '@/types/inventory';
 import type { WarehouseInventoryRequest, WarehouseInventory } from '@/types/inventory';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/apiClient'
@@ -24,25 +24,15 @@ export default function InventoryFormModal({ isOpen, onClose, onSubmit, initialD
     materialId: 0,
     quantity: 0,
     location: '',
-    status: InventoryStatus.IN_STORAGE,
+    status: WarehouseStatus.STORAGE,
     remarks: '',
   });
 
   const { data: materials } = useQuery({
     queryKey: ['materials'],
     queryFn: async () => {
-      // Assuming a generic material endpoint exists or fallback to static list if not
-      try {
-        const response = await apiClient.get<Material[]>('/api/materials');
-        return response.data || [];
-      } catch (e) {
-        // Fallback for demo purposes if endpoint doesn't exist
-        return [
-          { id: 1, name: '日本進口防水漆', unit: '桶' },
-          { id: 2, name: '台製防潮角材', unit: '根' },
-          { id: 3, name: '不鏽鋼螺絲 (2吋)', unit: '包' }
-        ];
-      }
+      const response = await apiClient.get<Material[]>('/materials');
+      return response.data || [];
     },
     enabled: isOpen,
   });
@@ -61,7 +51,7 @@ export default function InventoryFormModal({ isOpen, onClose, onSubmit, initialD
         materialId: materials?.[0]?.id || 0,
         quantity: 0,
         location: '',
-        status: InventoryStatus.AVAILABLE,
+        status: WarehouseStatus.AVAILABLE,
         remarks: '',
       });
     }
@@ -119,11 +109,11 @@ export default function InventoryFormModal({ isOpen, onClose, onSubmit, initialD
               <label className="block text-sm font-medium text-slate-700 mb-1">狀態</label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as InventoryStatus })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as WarehouseStatus })}
                 className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
               >
-                {Object.values(InventoryStatus).map(status => (
-                  <option key={status} value={status}>{InventoryStatusConfig[status as InventoryStatus].label}</option>
+                {Object.values(WarehouseStatus).map(status => (
+                  <option key={status} value={status}>{WarehouseStatusConfig[status as WarehouseStatus].label}</option>
                 ))}
               </select>
             </div>

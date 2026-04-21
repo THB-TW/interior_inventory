@@ -12,7 +12,7 @@ public class InventorySuggestionResponse {
     private String materialUnit;
     private Integer availableQuantity;
     private String location;
-    
+
     // Project Needs
     private Long projectId;
     private String projectName;

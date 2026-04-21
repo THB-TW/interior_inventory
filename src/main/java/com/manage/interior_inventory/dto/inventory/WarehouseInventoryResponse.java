@@ -1,6 +1,6 @@
 package com.manage.interior_inventory.dto.inventory;
 
-import com.manage.interior_inventory.entity.InventoryStatus;
+import com.manage.interior_inventory.entity.WarehouseStatus;
 import com.manage.interior_inventory.entity.WarehouseInventory;
 import java.time.LocalDateTime;
 
@@ -11,10 +11,9 @@ public record WarehouseInventoryResponse(
         String materialUnit,
         Integer quantity,
         String location,
-        InventoryStatus status,
+        WarehouseStatus status,
         String remarks,
-        LocalDateTime updatedAt
-) {
+        LocalDateTime updatedAt) {
     public static WarehouseInventoryResponse fromEntity(WarehouseInventory inventory) {
         return new WarehouseInventoryResponse(
                 inventory.getId(),
@@ -25,7 +24,6 @@ public record WarehouseInventoryResponse(
                 inventory.getLocation(),
                 inventory.getStatus(),
                 inventory.getRemarks(),
-                inventory.getUpdatedAt()
-        );
+                inventory.getUpdatedAt());
     }
 }

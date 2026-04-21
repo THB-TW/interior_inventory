@@ -16,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +30,8 @@ public class ProjectEstimationServiceImpl implements ProjectEstimationService {
     public ProjectEstimationResponse getEstimationByProjectId(Long projectId) {
         ProjectEstimation estimation = estimationRepository.findByProjectId(projectId)
                 .orElse(null);
-        if (estimation == null) return null;
+        if (estimation == null)
+            return null;
         return ProjectEstimationResponse.fromEntity(estimation);
     }
 
@@ -77,7 +76,7 @@ public class ProjectEstimationServiceImpl implements ProjectEstimationService {
             for (var workerReq : request.workerItems()) {
                 Worker worker = workerRepository.findById(workerReq.workerId())
                         .orElseThrow(() -> new BusinessException("Worker not found: " + workerReq.workerId()));
-                
+
                 int sub = workerReq.days().multiply(new BigDecimal(worker.getDailyWage())).intValue();
                 laborCost += sub;
 

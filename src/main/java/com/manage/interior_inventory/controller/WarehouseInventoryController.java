@@ -25,7 +25,8 @@ public class WarehouseInventoryController {
     }
 
     @PostMapping
-    public ApiResponse<WarehouseInventoryResponse> createInventory(@Valid @RequestBody WarehouseInventoryRequest request) {
+    public ApiResponse<WarehouseInventoryResponse> createInventory(
+            @Valid @RequestBody WarehouseInventoryRequest request) {
         WarehouseInventoryResponse response = inventoryService.createInventory(request);
         return ApiResponse.success("成功新增庫存", response);
     }

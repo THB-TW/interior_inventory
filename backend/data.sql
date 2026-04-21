@@ -34,11 +34,11 @@ VALUES
 -- === 倉庫庫存（假設部分材料已在倉庫） ===
 INSERT INTO warehouse_inventory (id, material_id, quantity, location, status, remarks, updated_at)
 VALUES
-  (1, 1, 100, 'A1-01', 'AVAILABLE', NULL, NOW()),
-  (2, 2,  50, 'A1-02', 'AVAILABLE', '剩餘最後 50 支', NOW()),
-  (3, 3,  30, 'B1-01', 'IN_STORAGE', '剛進貨，尚未拆封', NOW()),
-  (4, 4,  20, 'B1-02', 'AVAILABLE', '包裝略破', NOW()),
-  (5, 5,  40, 'B2-01', 'IN_USE', '已被案子 IP-202604-001 預訂', NOW());
+  (1, 1, 1, 'A1-01', 'AVAILABLE', NULL, NOW()),
+  (2, 2,  5, 'A1-02', 'AVAILABLE', '剩餘最後 50 支', NOW()),
+  (3, 3,  3, 'B1-01', 'AVAILABLE', '剛進貨，尚未拆封', NOW()),
+  (4, 4,  2, 'B1-02', 'AVAILABLE', '包裝略破', NOW()),
+  (5, 5,  1, 'B2-01', 'RESERVED', '已被案子 IP-202604-001 預訂', NOW());
 
 -- === 案件主檔 ===
 INSERT INTO projects (project_code, client_name, client_phone, city, district, site_address, description,
@@ -113,20 +113,14 @@ VALUES
 
 -- === 案件用料（預估 / 鎖定） ===
 INSERT INTO case_materials (id, case_id, material_id,
-                            planned_quantity, locked_quantity, actual_quantity,
-                            unit_price, line_cost)
+                            quantity, unit_price, line_cost)
 VALUES
   -- 案件 1：已確認，鎖定部分角材與板材，實際用量尚未填
-  (1, 1, 1, 80, 60, 0, 50.00, NULL),   -- 角材 80*12
-  (2, 1, 3, 10,  8, 0, 335.00, NULL),  -- 木心板2*8
-  (3, 1, 5, 20, 15, 0, 385.00, NULL);  -- 矽酸鈣板
-
--- === 案件用料（鎖定 + 實際用量） ===
-INSERT INTO case_materials (id, case_id, material_id, planned_quantity, locked_quantity, actual_quantity, unit_price, line_cost)
-VALUES
-  (1, 1, 1, 80, 0, 0, 50.00, 4000.00),   -- 案子1 需要 80支 角材 80*12
-  (2, 1, 3, 10, 0, 0, 335.00, 3350.00),  -- 案子1 需要 10片 木心板
-  (3, 2, 5, 20, 0, 0, 385.00, 7700.00);  -- 案子2 需要 20片 矽酸鈣板
+  (1, 1, 1, 80, 50.00, 4000),   -- 角材 80*12
+  (2, 1, 5, 20, 385.00, 7700),  -- 矽酸鈣板
+  (3, 1, 3, 10, 335.00, 3350.00),  -- 案子1 需要 10片 木心板
+  (4, 1, 3, 20, 335.00, 6700.00),
+  (5, 2, 5, 20, 385.00, 7700.00);  -- 案子2 需要 20片 矽酸鈣板
 
 -- === 建材商對帳單（假設就是你 PDF 上其中一張出貨單） ===
 INSERT INTO supplier_invoices (id, supplier_name, invoice_number, invoice_date, total_amount, created_at)

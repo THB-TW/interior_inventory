@@ -5,7 +5,7 @@ import com.manage.interior_inventory.dto.inventory.InventorySuggestionResponse;
 import com.manage.interior_inventory.dto.inventory.WarehouseInventoryRequest;
 import com.manage.interior_inventory.dto.inventory.WarehouseInventoryResponse;
 import com.manage.interior_inventory.entity.CaseMaterial;
-import com.manage.interior_inventory.entity.InventoryStatus;
+import com.manage.interior_inventory.entity.WarehouseStatus;
 import com.manage.interior_inventory.entity.Material;
 import com.manage.interior_inventory.entity.Project;
 import com.manage.interior_inventory.entity.WarehouseInventory;
@@ -51,7 +51,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .material(material)
                 .quantity(request.getQuantity())
                 .location(request.getLocation())
-                .status(request.getStatus() != null ? request.getStatus() : InventoryStatus.AVAILABLE)
+                .status(request.getStatus() != null ? request.getStatus() : WarehouseStatus.AVAILABLE)
                 .remarks(request.getRemarks())
                 .build();
 
@@ -93,7 +93,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         List<InventorySuggestionResponse> suggestions = new ArrayList<>();
 
         // 1. Get all AVAILABLE inventory
-        List<WarehouseInventory> availableInventories = inventoryRepository.findByStatus(InventoryStatus.AVAILABLE);
+        List<WarehouseInventory> availableInventories = inventoryRepository.findByStatus(WarehouseStatus.AVAILABLE);
 
         for (WarehouseInventory inventory : availableInventories) {
             // 2. Find active needs for this material
@@ -131,11 +131,11 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("找不到指定的專案 ID: " + projectId));
 
-        if (inventory.getStatus() != InventoryStatus.AVAILABLE) {
+        if (inventory.getStatus() != WarehouseStatus.RESERVED) {
             throw new BusinessException("庫存非可用狀態，無法徵用");
         }
 
-        inventory.setStatus(InventoryStatus.IN_USE);
+        inventory.setStatus(WarehouseStatus.RESERVED);
         String allocationRemark = String.format("徵用於案件: %s (%s)", project.getClientName(), project.getProjectCode());
         if (inventory.getRemarks() == null || inventory.getRemarks().isBlank()) {
             inventory.setRemarks(allocationRemark);

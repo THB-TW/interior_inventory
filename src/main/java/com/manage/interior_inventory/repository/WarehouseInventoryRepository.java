@@ -5,13 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 import java.util.List;
 
-import com.manage.interior_inventory.entity.InventoryStatus;
+import com.manage.interior_inventory.entity.WarehouseStatus;
 
 public interface WarehouseInventoryRepository extends JpaRepository<WarehouseInventory, Long> {
-    
-    @EntityGraph(attributePaths = {"material"})
+
+    @EntityGraph(attributePaths = { "material" })
     List<WarehouseInventory> findAll();
 
-    @EntityGraph(attributePaths = {"material"})
-    List<WarehouseInventory> findByStatus(InventoryStatus status);
+    @EntityGraph(attributePaths = { "material" })
+    List<WarehouseInventory> findByStatus(WarehouseStatus status);
 }

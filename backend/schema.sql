@@ -105,9 +105,8 @@ CREATE TABLE case_materials (
     id               BIGSERIAL PRIMARY KEY,
     case_id          BIGINT       NOT NULL,
     material_id      BIGINT       NOT NULL,
-    planned_quantity INTEGER      NOT NULL DEFAULT 0,
-    locked_quantity  INTEGER      NOT NULL DEFAULT 0,
-    actual_quantity  INTEGER      NOT NULL DEFAULT 0,
+    quantity INTEGER      NOT NULL DEFAULT 0,
+    material_type VARCHAR(20)    NOT NULL DEFAULT 'PURCHASE',
     unit_price       NUMERIC(10,2),
     line_cost        NUMERIC(10,2),
     CONSTRAINT fk_case_materials_case

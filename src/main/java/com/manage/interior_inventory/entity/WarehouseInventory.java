@@ -33,7 +33,7 @@ public class WarehouseInventory {
     @Enumerated(EnumType.STRING)
     @Column(length = 30, nullable = false)
     @Builder.Default
-    private InventoryStatus status = InventoryStatus.AVAILABLE;
+    private WarehouseStatus status = WarehouseStatus.AVAILABLE;
 
     @Column(length = 255)
     private String remarks;
