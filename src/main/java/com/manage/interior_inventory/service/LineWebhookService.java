@@ -54,7 +54,8 @@ public class LineWebhookService {
             }
 
             for (LineWebhookPayload.Event event : payload.getEvents()) {
-                if ("message".equals(event.getType()) && event.getMessage() != null && "text".equals(event.getMessage().getType())) {
+                if ("message".equals(event.getType()) && event.getMessage() != null
+                        && "text".equals(event.getMessage().getType())) {
                     String userId = event.getSource().getUserId();
                     String text = event.getMessage().getText();
                     String replyToken = event.getReplyToken();
@@ -96,7 +97,8 @@ public class LineWebhookService {
     }
 
     private void parseAndSetDetails(CustomerInquiry inquiry, String text) {
-        if (!StringUtils.hasText(text)) return;
+        if (!StringUtils.hasText(text))
+            return;
 
         // 解析: 姓名：XXX、電話：XXX、地址：XXX、時間：XXX
         String namePattern = "姓名[：:]\\s*([^、\\n]+)";

@@ -18,17 +18,17 @@ VALUES
   (3, 3); -- store -> ROLE_STORE
 
 -- === 料件 master ===
-INSERT INTO materials (id, name, unit, description, default_price, is_active, created_at)
+INSERT INTO materials (name, unit, description, default_price, is_active, created_at)
 VALUES
-  (1, '永新集層 角材 80*12*10#F1(綠建材)', '支',
+  ('永新集層 角材 80*12*10#F1(綠建材)', '支',
    '常用角材，綠建材等級', 50.00, TRUE, NOW()),
-  (2, '永新集層 角材 80*18*10#F1(綠建材)', '支',
+  ('永新集層 角材 80*18*10#F1(綠建材)', '支',
    '較厚角材，綠建材等級', 75.00, TRUE, NOW()),
-  (3, '木心板2*8 中興', '片',
+  ('木心板2*8 中興', '片',
    '常用木心板 2x8 尺寸', 335.00, TRUE, NOW()),
-  (4, '台灣日通 9mm 3*6', '片',
+  ('台灣日通 9mm 3*6', '片',
    '9mm 厚 3x6 板材', 420.00, TRUE, NOW()),
-  (5, '儷士 矽酸鈣 6mm 3*6(日本)', '片',
+  ('儷士 矽酸鈣 6mm 3*6(日本)', '片',
    '矽酸鈣板 6mm 日本製', 385.00, TRUE, NOW());
 
 -- === 倉庫庫存（假設部分材料已在倉庫） ===
@@ -112,15 +112,16 @@ VALUES
    '浴室翻新預約', 'INQUIRY', 1, 8, NOW(), NOW());
 
 -- === 案件用料（預估 / 鎖定） ===
-INSERT INTO case_materials (id, case_id, material_id,
-                            quantity, unit_price, line_cost)
+INSERT INTO case_materials (case_id, material_id,
+                            quantity, material_type, unit_price, line_cost)
 VALUES
   -- 案件 1：已確認，鎖定部分角材與板材，實際用量尚未填
-  (1, 1, 1, 80, 50.00, 4000),   -- 角材 80*12
-  (2, 1, 5, 20, 385.00, 7700),  -- 矽酸鈣板
-  (3, 1, 3, 10, 335.00, 3350.00),  -- 案子1 需要 10片 木心板
-  (4, 1, 3, 20, 335.00, 6700.00),
-  (5, 2, 5, 20, 385.00, 7700.00);  -- 案子2 需要 20片 矽酸鈣板
+  (1, 1, 80, 'PURCHASE', 50.00, 4000),   -- 角材 80*12
+  (1, 5, 20, 'PURCHASE', 385.00, 7700),  -- 矽酸鈣板
+  (1, 3, 10, 'PURCHASE', 335.00, 3350.00),  -- 案子1 需要 10片 木心板
+  (1, 3, 20, 'RETURN', 335.00, 6700.00),
+  (1, 5, 20, 'LEFTOVER', 335.00, 6700.00),
+  (2, 5, 20, 'PURCHASE', 385.00, 7700.00);  -- 案子2 需要 20片 矽酸鈣板
 
 -- === 建材商對帳單（假設就是你 PDF 上其中一張出貨單） ===
 INSERT INTO supplier_invoices (id, supplier_name, invoice_number, invoice_date, total_amount, created_at)

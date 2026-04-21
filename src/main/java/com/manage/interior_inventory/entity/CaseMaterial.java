@@ -30,9 +30,10 @@ public class CaseMaterial {
     @Builder.Default
     private Integer quantity = 0;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "material_type", nullable = false, length = 20)
     @Builder.Default
-    private String materialType = "PURCHASE";
+    private CaseMaterialType materialType = CaseMaterialType.PURCHASE;
 
     @Column(name = "unit_price", precision = 10, scale = 2)
     private BigDecimal unitPrice;

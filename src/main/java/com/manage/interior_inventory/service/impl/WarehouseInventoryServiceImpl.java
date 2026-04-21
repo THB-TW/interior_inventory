@@ -4,11 +4,12 @@ import com.manage.interior_inventory.common.exception.BusinessException;
 import com.manage.interior_inventory.dto.inventory.InventorySuggestionResponse;
 import com.manage.interior_inventory.dto.inventory.WarehouseInventoryRequest;
 import com.manage.interior_inventory.dto.inventory.WarehouseInventoryResponse;
-import com.manage.interior_inventory.entity.CaseMaterial;
 import com.manage.interior_inventory.entity.WarehouseStatus;
 import com.manage.interior_inventory.entity.Material;
 import com.manage.interior_inventory.entity.Project;
 import com.manage.interior_inventory.entity.WarehouseInventory;
+import com.manage.interior_inventory.entity.CaseMaterial;
+import com.manage.interior_inventory.entity.CaseMaterialType;
 import com.manage.interior_inventory.repository.CaseMaterialRepository;
 import com.manage.interior_inventory.repository.MaterialRepository;
 import com.manage.interior_inventory.repository.ProjectRepository;
@@ -135,8 +136,41 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
             throw new BusinessException("庫存非可用狀態，無法徵用");
         }
 
+        int usedQuantity = inventory.getQuantity();
+
+        // 2. 如果該案件已經有針對這個材料的「進貨」紀錄，先把數量扣掉
+        caseMaterialRepository.findFirstByProject_IdAndMaterial_IdAndMaterialType(
+                projectId,
+                inventory.getMaterial().getId(),
+                CaseMaterialType.PURCHASE).ifPresent(purchaseLine -> {
+                    int newQty = purchaseLine.getQuantity() - usedQuantity;
+                    if (newQty > 0) {
+                        purchaseLine.setQuantity(newQty);
+                        caseMaterialRepository.save(purchaseLine);
+                    } else {
+                        // 數量扣到 0，就刪掉這一列
+                        caseMaterialRepository.delete(purchaseLine);
+                    }
+                });
+
+        // 3. 新增一筆「剩料」來源的用料紀錄（LEFTOVER）
+        CaseMaterial leftoverLine = CaseMaterial.builder()
+                .project(project)
+                .material(inventory.getMaterial())
+                .quantity(usedQuantity)
+                .materialType(CaseMaterialType.LEFTOVER)
+                .unitPrice(null) // 若要記成本，可在此填入
+                .lineCost(null)
+                .build();
+
+        caseMaterialRepository.save(leftoverLine);
+
+        // 4. 更新庫存狀態 & 備註
         inventory.setStatus(WarehouseStatus.RESERVED);
-        String allocationRemark = String.format("徵用於案件: %s (%s)", project.getClientName(), project.getProjectCode());
+        String allocationRemark = String.format(
+                "徵用於案件: %s (%s)",
+                project.getClientName(),
+                project.getProjectCode());
         if (inventory.getRemarks() == null || inventory.getRemarks().isBlank()) {
             inventory.setRemarks(allocationRemark);
         } else {

@@ -94,7 +94,8 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/test/http-message-not-readable")
         public void throwHttpMessageNotReadable() {
-            throw new HttpMessageNotReadableException("JSON parse error", (org.springframework.http.HttpInputMessage) null);
+            throw new HttpMessageNotReadableException("JSON parse error",
+                    (org.springframework.http.HttpInputMessage) null);
         }
 
         @GetMapping("/test/data-integrity")
@@ -112,7 +113,7 @@ class GlobalExceptionHandlerTest {
             BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "object");
             bindingResult.addError(new FieldError("object", "field", "error message"));
             org.springframework.core.MethodParameter methodParameter = new org.springframework.core.MethodParameter(
-                this.getClass().getMethod("throwValidation"), -1);
+                    this.getClass().getMethod("throwValidation"), -1);
             throw new MethodArgumentNotValidException(methodParameter, bindingResult);
         }
     }

@@ -2,6 +2,7 @@ package com.manage.interior_inventory.controller;
 
 import com.manage.interior_inventory.common.ApiResponse;
 import com.manage.interior_inventory.dto.material.MaterialResponse;
+import com.manage.interior_inventory.dto.material.MaterialSaveRequest;
 import com.manage.interior_inventory.service.MaterialService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,5 +23,34 @@ public class MaterialController {
     @Operation(summary = "取得所有材料清單")
     public ApiResponse<List<MaterialResponse>> getAllMaterials() {
         return ApiResponse.success("成功取得材料清單", materialService.getAllMaterials());
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "取得單一材料")
+    public ApiResponse<MaterialResponse> getById(@PathVariable Long id) {
+        MaterialResponse data = materialService.getMaterialById(id);
+        return ApiResponse.success("查詢材料成功", data);
+    }
+
+    @PostMapping
+    @Operation(summary = "新增材料")
+    public ApiResponse<MaterialResponse> create(@RequestBody MaterialSaveRequest request) {
+        MaterialResponse data = materialService.createMaterial(request);
+        return ApiResponse.success("新增材料成功", data);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "更新材料")
+    public ApiResponse<MaterialResponse> update(@PathVariable Long id,
+            @RequestBody MaterialSaveRequest request) {
+        MaterialResponse data = materialService.updateMaterial(id, request);
+        return ApiResponse.success("更新材料成功", data);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "刪除材料")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        materialService.deleteMaterial(id);
+        return ApiResponse.success("刪除材料成功");
     }
 }
