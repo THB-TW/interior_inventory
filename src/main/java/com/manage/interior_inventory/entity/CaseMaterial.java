@@ -26,17 +26,13 @@ public class CaseMaterial {
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
 
-    @Column(name = "planned_quantity", nullable = false)
+    @Column(name = "quantity", nullable = false)
     @Builder.Default
-    private Integer plannedQuantity = 0;
+    private Integer quantity = 0;
 
-    @Column(name = "locked_quantity", nullable = false)
+    @Column(name = "material_type", nullable = false, length = 20)
     @Builder.Default
-    private Integer lockedQuantity = 0;
-
-    @Column(name = "actual_quantity", nullable = false)
-    @Builder.Default
-    private Integer actualQuantity = 0;
+    private String materialType = "PURCHASE";
 
     @Column(name = "unit_price", precision = 10, scale = 2)
     private BigDecimal unitPrice;

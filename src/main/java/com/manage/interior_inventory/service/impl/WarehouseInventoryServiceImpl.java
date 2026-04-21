@@ -108,13 +108,13 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                             .materialId(inventory.getMaterial().getId())
                             .materialName(inventory.getMaterial().getName())
                             .materialUnit(inventory.getMaterial().getUnit())
-                            .availableQuantity(inventory.getQuantity())
+                            .remainQuantity(inventory.getQuantity())
                             .location(inventory.getLocation())
                             .projectId(need.getProject().getId())
                             .projectName(
                                     need.getProject().getClientName() + " (" + need.getProject().getProjectCode() + ")")
                             .projectAddress(need.getProject().getSiteAddress())
-                            .plannedQuantity(need.getPlannedQuantity())
+                            .projectQuantity(need.getQuantity())
                             .build());
                 }
             }
@@ -131,7 +131,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BusinessException("找不到指定的專案 ID: " + projectId));
 
-        if (inventory.getStatus() != WarehouseStatus.RESERVED) {
+        if (inventory.getStatus() != WarehouseStatus.AVAILABLE) {
             throw new BusinessException("庫存非可用狀態，無法徵用");
         }
 

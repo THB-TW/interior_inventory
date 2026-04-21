@@ -8,10 +8,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CaseMaterialRepository extends JpaRepository<CaseMaterial, Long> {
-    
+
     @Query("SELECT cm FROM CaseMaterial cm " +
-           "JOIN FETCH cm.project p " +
-           "JOIN FETCH cm.material m " +
-           "WHERE m.id = :materialId AND p.status IN ('PENDING', 'IN_PROGRESS', 'CONTRACT_SIGNED')")
+            "JOIN FETCH cm.project p " +
+            "JOIN FETCH cm.material m " +
+            "WHERE m.id = :materialId AND p.status IN ('QUOTING', 'CONFIRMED', 'IN_PROGRESS', 'INSPECTION')")
     List<CaseMaterial> findActiveNeedsByMaterialId(@Param("materialId") Long materialId);
 }
