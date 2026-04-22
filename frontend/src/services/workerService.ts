@@ -1,28 +1,58 @@
-import type { Worker, WorkerRequest } from '@/types/worker';
-import type { ApiResponse } from '@/types/project';
+import type { Worker, WorkerRequest, WorkerProjectSummary, CaseWorkerRow, CaseWorkerRequest } from '@/types/worker';
+import apiClient from '@/lib/apiClient';
 
-const API_BASE_URL = '/api/workers';
+const WORKER_BASE = '/workers';
 
 export async function getWorkers(): Promise<Worker[]> {
-  const response = await fetch(API_BASE_URL);
-  if (!response.ok) {
-    throw new Error('無法取得師傅列表');
-  }
-  const result: ApiResponse<Worker[]> = await response.json();
-  if (!result.success) throw new Error(result.message);
-  return result.data || [];
+  const response = await apiClient.get<Worker[]>(WORKER_BASE);
+  return (response.data || []) as Worker[];
 }
 
-export async function createWorker(request: WorkerRequest): Promise<Worker> {
-  const response = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error('無法新增師傅');
-  }
-  const result: ApiResponse<Worker> = await response.json();
-  if (!result.success) throw new Error(result.message);
-  return result.data!;
+export async function createWorker(payload: WorkerRequest): Promise<Worker> {
+  const response = await apiClient.post<Worker>(WORKER_BASE, payload);
+  return response.data;
+}
+
+export async function updateWorker(id: number, payload: WorkerRequest): Promise<Worker> {
+  const response = await apiClient.put<Worker>(`${WORKER_BASE}/${id}`, payload);
+  return response.data;
+}
+
+export async function deleteWorker(id: number): Promise<void> {
+  await apiClient.delete(`${WORKER_BASE}/${id}`);
+}
+
+// ── 新增：case_workers 施工紀錄 ───────────────────────────────
+const CASE_WORKER_BASE = '/caseworkers';
+
+export async function getWorkerOverview(): Promise<WorkerProjectSummary[]> {
+  const response = await apiClient.get<WorkerProjectSummary[]>(CASE_WORKER_BASE);
+  return (response.data || []) as WorkerProjectSummary[];
+}
+
+export async function createCaseWorker(
+  caseId: number,
+  payload: CaseWorkerRequest,
+): Promise<CaseWorkerRow> {
+  const response = await apiClient.post<CaseWorkerRow>(
+    `${CASE_WORKER_BASE}/${caseId}/workers`,
+    payload,
+  );
+  return response.data;
+}
+
+export async function updateCaseWorker(
+  caseId: number,
+  caseWorkerId: number,
+  payload: CaseWorkerRequest,
+): Promise<CaseWorkerRow> {
+  const response = await apiClient.put<CaseWorkerRow>(
+    `${CASE_WORKER_BASE}/${caseId}/workers/${caseWorkerId}`,
+    payload,
+  );
+  return response.data;
+}
+
+export async function deleteCaseWorker(caseId: number, caseWorkerId: number): Promise<void> {
+  await apiClient.delete(`${CASE_WORKER_BASE}/${caseId}/workers/${caseWorkerId}`);
 }

@@ -5,6 +5,7 @@ import ProjectListPage from '@/pages/projects/ProjectListPage';
 import ProjectEstimationPage from '@/pages/projects/ProjectEstimationPage';
 import InventoryPage from '@/pages/inventory/InventoryPage';
 import QuoteOverviewPage from '@/pages/quotes/QuoteOverviewPage';
+import WorkerOverviewPage from '@/pages/workers/WorkerOverviewPage';
 import PlaceholderPage from '@/components/common/PlaceholderPage';
 
 const router = createBrowserRouter([
@@ -18,7 +19,7 @@ const router = createBrowserRouter([
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'quotes', element: <QuoteOverviewPage /> },
       { path: 'finance', element: <PlaceholderPage title="財務管理" /> },
-      { path: 'workers', element: <PlaceholderPage title="師傅管理" /> },
+      { path: 'workers', element: <WorkerOverviewPage /> },
       { path: 'clients', element: <PlaceholderPage title="客戶資料" /> },
       { path: 'settings', element: <PlaceholderPage title="設定" /> },
     ],

@@ -16,8 +16,8 @@ const schema = z.object({
   city: z.string().min(1, '縣市為必填'),
   district: z.string().optional(),
   siteAddress: z.string().min(1, '詳細地址為必填'),
-  salesUserId: z.coerce.number({ invalid_type_error: '負責業務 ID 為必填數字' }).min(1, '請輸入有效的業務 ID'),
-  estimatedDays: z.coerce.number().optional(),
+  salesUserId: z.number({ error: '負責業務 ID 為必填數字' }).min(1, '請輸入有效的業務 ID'),
+  estimatedDays: z.number().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -135,7 +135,7 @@ export default function ProjectFormModal({
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="負責業務 ID" required error={errors.salesUserId?.message}>
-              <input type="number" {...register('salesUserId')} placeholder="1" className={inputClass(!!errors.salesUserId)} />
+              <input type="number" {...register('salesUserId', { valueAsNumber: true })} placeholder="1" className={inputClass(!!errors.salesUserId)} />
             </FormField>
             <FormField label="預計工期（天）" error={errors.estimatedDays?.message}>
               <input type="number" {...register('estimatedDays')} placeholder="30" className={inputClass(!!errors.estimatedDays)} />

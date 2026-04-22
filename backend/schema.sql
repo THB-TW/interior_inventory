@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS estimation_worker_items;
 DROP TABLE IF EXISTS estimation_items;
 DROP TABLE IF EXISTS project_estimations;
 DROP TABLE IF EXISTS workers;
+DROP TABLE IF EXISTS case_workers;
 DROP TABLE IF EXISTS supplier_invoice_items;
 DROP TABLE IF EXISTS supplier_invoices;
 DROP TABLE IF EXISTS case_materials;
@@ -161,6 +162,15 @@ CREATE TABLE workers (
     id          BIGSERIAL PRIMARY KEY,
     nickname    VARCHAR(50) NOT NULL,
     daily_wage  INTEGER NOT NULL
+);
+
+CREATE TABLE case_workers (
+    id              BIGSERIAL PRIMARY KEY,
+    case_id         BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    worker_id       BIGINT REFERENCES workers(id) ON DELETE SET NULL,
+    daily_wage      NUMERIC(10,2) NOT NULL DEFAULT 0,
+    workday         DATE NOT NULL,
+    travel_expenses NUMERIC(10,2) NOT NULL DEFAULT 0
 );
 
 -- === 案件估價主檔 ===
