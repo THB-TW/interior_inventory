@@ -1,0 +1,1 @@
+SELECT setval('warehouse_inventory_id_seq', (SELECT MAX(id) FROM warehouse_inventory));

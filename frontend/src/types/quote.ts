@@ -18,12 +18,15 @@ export const CASE_MATERIAL_TYPE_LABELS: Record<CaseMaterialType, string> = {
 
 // 對應後端 QuoteMaterialResponse
 export interface QuoteMaterialResponse {
+    caseMaterialId: number;
     materialId: number;
     materialName: string;
     purchaseQuantity: number;
     leftoverQuantity: number;
     returnQuantity: number;
     totalQuantity: number;
+    unitPrice: number | null;
+    lineCost: number | null;
 }
 
 export interface QuoteProjectUsage {
@@ -34,4 +37,17 @@ export interface QuoteProjectUsage {
     address: string;
     description: string;
     materials: QuoteMaterialResponse[];
+}
+
+export interface QuoteMaterialLineResponse {
+    caseMaterialId: number;
+    materialId: number;
+    materialName: string;
+    materialCode: string;
+    materialSpec: string;
+    materialUnit: string;
+    materialType: CaseMaterialType;
+    quantity: number;
+    unitPrice: number | null;
+    lineCost: number | null;
 }

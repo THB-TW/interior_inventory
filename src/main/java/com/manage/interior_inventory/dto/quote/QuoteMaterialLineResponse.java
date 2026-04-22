@@ -1,23 +1,18 @@
 package com.manage.interior_inventory.dto.quote;
 
 import com.manage.interior_inventory.entity.CaseMaterialType;
-
 import lombok.Builder;
 import lombok.Value;
-
 import java.math.BigDecimal;
 
 @Value
-@Builder(toBuilder = true)
-public class QuoteMaterialResponse {
+@Builder
+public class QuoteMaterialLineResponse {
     Long caseMaterialId;
     Long materialId;
     String materialName;
     CaseMaterialType materialType;
-    int purchaseQuantity;
-    int leftoverQuantity;
-    int returnQuantity;
-    int totalQuantity;
+    Integer quantity;
     BigDecimal unitPrice;
     BigDecimal lineCost;
 }

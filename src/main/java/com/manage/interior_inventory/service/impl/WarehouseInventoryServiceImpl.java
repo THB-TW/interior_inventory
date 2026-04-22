@@ -139,7 +139,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         int usedQuantity = inventory.getQuantity();
 
         // 2. 如果該案件已經有針對這個材料的「進貨」紀錄，先把數量扣掉
-        caseMaterialRepository.findFirstByProject_IdAndMaterial_IdAndMaterialType(
+        caseMaterialRepository.findFirstByProjectIdAndMaterialIdAndMaterialType(
                 projectId,
                 inventory.getMaterial().getId(),
                 CaseMaterialType.PURCHASE).ifPresent(purchaseLine -> {

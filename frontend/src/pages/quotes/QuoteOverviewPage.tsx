@@ -5,6 +5,7 @@ import type { QuoteProjectUsage } from '@/types/quote';
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '@/types/project';
 import { Loader2, ChevronDown, ChevronUp, FileText, Plus } from 'lucide-react';
 import MaterialManagementModal from '@/components/material/MaterialManagementModal';
+import CaseMaterialModal from '@/components/quote/CaseMaterialModal';
 
 export default function QuoteOverviewPage() {
     const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -14,6 +15,7 @@ export default function QuoteOverviewPage() {
         queryKey: ['quote-overview'],
         queryFn: getQuoteOverview,
     });
+    const [materialModalProject, setMaterialModalProject] = useState<QuoteProjectUsage | null>(null);
 
     if (isLoading) {
         return (
@@ -113,6 +115,13 @@ export default function QuoteOverviewPage() {
                                             </>
                                         )}
                                     </button>
+                                    <button
+                                        onClick={() => setMaterialModalProject(project)}
+                                        className="flex items-center gap-1 text-sm text-slate-500 hover:text-[var(--color-primary)] border border-slate-200 px-2 py-1 rounded-md hover:border-[var(--color-primary)] transition-colors"
+                                    >
+                                        <Plus size={14} />
+                                        管理用料
+                                    </button>
                                 </div>
 
                                 {/* 中間：簡要顯示用料狀況 */}
@@ -157,6 +166,8 @@ export default function QuoteOverviewPage() {
                                                         <th className="px-3 py-2 text-right">進貨量</th>
                                                         <th className="px-3 py-2 text-right">剩料量</th>
                                                         <th className="px-3 py-2 text-right">退貨量</th>
+                                                        <th className="px-3 py-2 text-right">材料單價</th>
+                                                        <th className="px-3 py-2 text-right">小計</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -178,6 +189,12 @@ export default function QuoteOverviewPage() {
                                                             <td className="px-3 py-2 text-right text-slate-500">
                                                                 {m.returnQuantity}
                                                             </td>
+                                                            <td className="px-3 py-2 text-right">
+                                                                {m.unitPrice != null ? m.unitPrice.toLocaleString() : '—'}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-right font-medium">
+                                                                {m.lineCost != null ? m.lineCost.toLocaleString() : '—'}
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -198,6 +215,13 @@ export default function QuoteOverviewPage() {
                 isOpen={isMaterialModalOpen}
                 onClose={() => setIsMaterialModalOpen(false)}
             />
+            {materialModalProject && (
+                <CaseMaterialModal
+                    isOpen={!!materialModalProject}
+                    onClose={() => setMaterialModalProject(null)}
+                    project={materialModalProject}
+                />
+            )}
         </>
     );
 }
