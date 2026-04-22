@@ -1,3 +1,5 @@
+// frontend/src/components/quote/CaseMaterialModal.tsx
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
@@ -24,7 +26,6 @@ const EMPTY_FORM: QuoteMaterialPayload = {
     quantity: 1,
 };
 
-// 類型選單只開放進貨 / 退貨，排除剩料
 const ALLOWED_TYPES = ['PURCHASE', 'RETURN'] as const;
 
 export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
@@ -33,20 +34,17 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
-    // 材料主檔下拉選單
     const { data: materials = [] } = useQuery({
         queryKey: ['materials'],
         queryFn: getMaterials,
     });
 
-    // 每筆 CaseMaterial 明細（不 aggregate）
     const { data: rows = [], isLoading: linesLoading } = useQuery({
         queryKey: ['case-material-lines', project.projectId],
         queryFn: () => getCaseMaterialLines(project.projectId),
         enabled: isOpen,
     });
 
-    // 選到材料時自動帶入 defaultPrice
     useEffect(() => {
         if (form.materialId) {
             const mat = materials.find((m) => m.id === form.materialId);
@@ -56,7 +54,6 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
         }
     }, [form.materialId, materials]);
 
-    // 關閉時重置表單狀態
     const handleClose = () => {
         setForm(EMPTY_FORM);
         setEditingId(null);
@@ -69,7 +66,6 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
         queryClient.invalidateQueries({ queryKey: ['quote-overview'] });
     };
 
-    // 新增
     const createMutation = useMutation({
         mutationFn: (payload: QuoteMaterialPayload) =>
             createProjectMaterial(project.projectId, payload),
@@ -79,7 +75,6 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
         },
     });
 
-    // 更新
     const updateMutation = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: QuoteMaterialPayload }) =>
             updateProjectMaterial(project.projectId, id, payload),
@@ -90,7 +85,6 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
         },
     });
 
-    // 刪除
     const deleteMutation = useMutation({
         mutationFn: (caseMaterialId: number) =>
             deleteProjectMaterial(project.projectId, caseMaterialId),
@@ -131,6 +125,20 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
         setForm(EMPTY_FORM);
     };
 
+    // ★ 依 orderBatch 分組，方便顯示分隔線
+    const groupedByBatch = rows.reduce<Record<number, QuoteMaterialLineResponse[]>>(
+        (acc, row) => {
+            const batch = row.orderBatch;
+            if (!acc[batch]) acc[batch] = [];
+            acc[batch].push(row);
+            return acc;
+        },
+        {},
+    );
+    const sortedBatches = Object.keys(groupedByBatch)
+        .map(Number)
+        .sort((a, b) => a - b);
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -141,7 +149,13 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                         <h2 className="text-base font-semibold text-slate-800">
                             管理用料 — {project.projectCode}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-0.5">{project.clientName}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            {project.clientName}
+                            {/* ★ 顯示當前叫貨批次 */}
+                            <span className="ml-2 px-1.5 py-0.5 bg-teal-50 text-teal-700 rounded text-xs font-medium">
+                                目前第 {project.orderBatch} 批
+                            </span>
+                        </p>
                     </div>
                     <button
                         onClick={handleClose}
@@ -155,104 +169,122 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                 {/* ── Content ── */}
                 <div className="flex-1 overflow-auto p-6 space-y-6">
 
-                    {/* 每筆 CaseMaterial 明細列表 */}
+                    {/* 材料明細列表 */}
                     {linesLoading ? (
                         <div className="flex items-center justify-center py-8 text-slate-400">
                             <Loader2 size={20} className="animate-spin mr-2" />
                             <span className="text-sm">載入中…</span>
                         </div>
                     ) : rows.length > 0 ? (
-                        <table className="min-w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-                            <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wide">
-                                <tr>
-                                    <th className="px-3 py-2 text-left">材料名稱</th>
-                                    <th className="px-3 py-2 text-left">類型</th>
-                                    <th className="px-3 py-2 text-right">數量</th>
-                                    <th className="px-3 py-2 text-right">單價</th>
-                                    <th className="px-3 py-2 text-right">小計</th>
-                                    <th className="px-3 py-2 text-center">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row) => (
-                                    <tr
-                                        key={row.caseMaterialId}
-                                        className={`border-t border-slate-200 transition-colors ${editingId === row.caseMaterialId
-                                            ? 'bg-teal-50'
-                                            : 'hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        <td className="px-3 py-2 font-medium">{row.materialName}</td>
-                                        <td className="px-3 py-2">
-                                            <span
-                                                className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${row.materialType === 'PURCHASE'
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : row.materialType === 'RETURN'
-                                                        ? 'bg-orange-100 text-orange-700'
-                                                        : 'bg-slate-100 text-slate-600'
-                                                    }`}
-                                            >
-                                                {CASE_MATERIAL_TYPE_LABELS[row.materialType]}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-2 text-right">{row.quantity}</td>
-                                        <td className="px-3 py-2 text-right text-slate-600">
-                                            {row.unitPrice != null
-                                                ? row.unitPrice.toLocaleString()
-                                                : '—'}
-                                        </td>
-                                        <td className="px-3 py-2 text-right font-medium">
-                                            {row.lineCost != null
-                                                ? row.lineCost.toLocaleString()
-                                                : '—'}
-                                        </td>
-                                        <td className="px-3 py-2 text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(row)}
-                                                    className="text-slate-400 hover:text-[var(--color-primary)] transition-colors"
-                                                    aria-label="編輯"
-                                                    disabled={isSubmitting}
+                        <div className="space-y-4">
+                            {sortedBatches.map((batch) => (
+                                <div key={batch}>
+                                    {/* ★ 批次分隔標題 */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${batch === project.orderBatch
+                                            ? 'bg-teal-100 text-teal-700'
+                                            : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                            第 {batch} 批
+                                        </span>
+                                        {batch === project.orderBatch && (
+                                            <span className="text-xs text-teal-600">（本次叫貨）</span>
+                                        )}
+                                        <span className="text-xs text-slate-400">
+                                            建立：{new Date(groupedByBatch[batch][0].createdAt).toLocaleDateString('zh-TW')}
+                                        </span>
+                                    </div>
+
+                                    <table className="min-w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+                                        <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wide">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left">材料名稱</th>
+                                                <th className="px-3 py-2 text-left">類型</th>
+                                                <th className="px-3 py-2 text-right">數量</th>
+                                                <th className="px-3 py-2 text-right">單價</th>
+                                                <th className="px-3 py-2 text-right">小計</th>
+                                                {/* ★ 建立時間欄 */}
+                                                <th className="px-3 py-2 text-center">建立時間</th>
+                                                <th className="px-3 py-2 text-center">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {groupedByBatch[batch].map((row) => (
+                                                <tr
+                                                    key={row.caseMaterialId}
+                                                    className={`border-t border-slate-200 transition-colors ${editingId === row.caseMaterialId
+                                                        ? 'bg-teal-50'
+                                                        : 'hover:bg-slate-50'
+                                                        }`}
                                                 >
-                                                    <Pencil size={14} />
-                                                </button>
-                                                {deleteTargetId === row.caseMaterialId ? (
-                                                    <div className="flex items-center gap-1 text-xs">
-                                                        <button
-                                                            onClick={() =>
-                                                                deleteMutation.mutate(row.caseMaterialId)
-                                                            }
-                                                            className="text-red-600 font-medium hover:underline"
-                                                            disabled={isSubmitting}
-                                                        >
-                                                            確認
-                                                        </button>
-                                                        <span className="text-slate-300">|</span>
-                                                        <button
-                                                            onClick={() => setDeleteTargetId(null)}
-                                                            className="text-slate-400 hover:underline"
-                                                        >
-                                                            取消
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <button
-                                                        onClick={() =>
-                                                            setDeleteTargetId(row.caseMaterialId)
-                                                        }
-                                                        className="text-slate-400 hover:text-red-500 transition-colors"
-                                                        aria-label="刪除"
-                                                        disabled={isSubmitting}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                                    <td className="px-3 py-2 font-medium">{row.materialName}</td>
+                                                    <td className="px-3 py-2">
+                                                        <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${row.materialType === 'PURCHASE'
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : row.materialType === 'RETURN'
+                                                                ? 'bg-orange-100 text-orange-700'
+                                                                : 'bg-slate-100 text-slate-600'
+                                                            }`}>
+                                                            {CASE_MATERIAL_TYPE_LABELS[row.materialType]}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">{row.quantity}</td>
+                                                    <td className="px-3 py-2 text-right text-slate-600">
+                                                        {row.unitPrice != null ? row.unitPrice.toLocaleString() : '—'}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right font-medium">
+                                                        {row.lineCost != null ? row.lineCost.toLocaleString() : '—'}
+                                                    </td>
+                                                    {/* ★ 建立時間 */}
+                                                    <td className="px-3 py-2 text-center text-xs text-slate-400">
+                                                        {new Date(row.createdAt).toLocaleDateString('zh-TW')}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-center">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button
+                                                                onClick={() => handleEdit(row)}
+                                                                className="text-slate-400 hover:text-[var(--color-primary)] transition-colors"
+                                                                aria-label="編輯"
+                                                                disabled={isSubmitting}
+                                                            >
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                            {deleteTargetId === row.caseMaterialId ? (
+                                                                <div className="flex items-center gap-1 text-xs">
+                                                                    <button
+                                                                        onClick={() => deleteMutation.mutate(row.caseMaterialId)}
+                                                                        className="text-red-600 font-medium hover:underline"
+                                                                        disabled={isSubmitting}
+                                                                    >
+                                                                        確認
+                                                                    </button>
+                                                                    <span className="text-slate-300">|</span>
+                                                                    <button
+                                                                        onClick={() => setDeleteTargetId(null)}
+                                                                        className="text-slate-400 hover:underline"
+                                                                    >
+                                                                        取消
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => setDeleteTargetId(row.caseMaterialId)}
+                                                                    className="text-slate-400 hover:text-red-500 transition-colors"
+                                                                    aria-label="刪除"
+                                                                    disabled={isSubmitting}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ))}
+                        </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-10 text-slate-400">
                             <p className="text-sm">此案件目前尚未設定用料。</p>
@@ -268,20 +300,27 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                         <h3 className="text-sm font-medium text-slate-700">
                             {editingId !== null ? '✏️ 編輯用料' : '＋ 新增用料'}
                         </h3>
+                        {/* ★ 提示新增後會被分到哪一批 */}
+                        {editingId === null && (
+                            <p className="text-xs text-slate-400">
+                                新增的用料將自動歸入第{' '}
+                                <span className="font-medium text-teal-600">
+                                    {project.orderBatch}
+                                </span>{' '}
+                                批叫貨。
+                            </p>
+                        )}
 
                         <div className="grid grid-cols-2 gap-3">
-                            {/* 材料名稱下拉（連結 materials 主檔） */}
                             <div className="col-span-2">
-                                <label className="block text-xs text-slate-500 mb-1">
-                                    材料名稱
-                                </label>
+                                <label className="block text-xs text-slate-500 mb-1">材料名稱</label>
                                 <select
                                     value={form.materialId || ''}
                                     onChange={(e) =>
                                         setForm((f) => ({
                                             ...f,
                                             materialId: Number(e.target.value),
-                                            unitPrice: undefined, // 換材料時先清空，讓 useEffect 重新帶入
+                                            unitPrice: undefined,
                                         }))
                                     }
                                     required
@@ -298,18 +337,14 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                                 </select>
                             </div>
 
-                            {/* 用料類型：只能選進貨 / 退貨 */}
                             <div>
-                                <label className="block text-xs text-slate-500 mb-1">
-                                    用料類型
-                                </label>
+                                <label className="block text-xs text-slate-500 mb-1">用料類型</label>
                                 <select
                                     value={form.materialType}
                                     onChange={(e) =>
                                         setForm((f) => ({
                                             ...f,
-                                            materialType: e.target
-                                                .value as QuoteMaterialPayload['materialType'],
+                                            materialType: e.target.value as QuoteMaterialPayload['materialType'],
                                         }))
                                     }
                                     className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
@@ -322,33 +357,24 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                                 </select>
                             </div>
 
-                            {/* 數量 */}
                             <div>
-                                <label className="block text-xs text-slate-500 mb-1">
-                                    數量
-                                </label>
+                                <label className="block text-xs text-slate-500 mb-1">數量</label>
                                 <input
                                     type="number"
                                     min={1}
                                     value={form.quantity}
                                     onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            quantity: Number(e.target.value),
-                                        }))
+                                        setForm((f) => ({ ...f, quantity: Number(e.target.value) }))
                                     }
                                     required
                                     className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                                 />
                             </div>
 
-                            {/* 單價（選填，自動帶入 defaultPrice） */}
                             <div className="col-span-2">
                                 <label className="block text-xs text-slate-500 mb-1">
                                     單價
-                                    <span className="ml-1 text-slate-400">
-                                        （選填，自動帶入材料預設單價）
-                                    </span>
+                                    <span className="ml-1 text-slate-400">（選填，自動帶入材料預設單價）</span>
                                 </label>
                                 <input
                                     type="number"
@@ -358,9 +384,7 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                                     onChange={(e) =>
                                         setForm((f) => ({
                                             ...f,
-                                            unitPrice: e.target.value
-                                                ? Number(e.target.value)
-                                                : undefined,
+                                            unitPrice: e.target.value ? Number(e.target.value) : undefined,
                                         }))
                                     }
                                     placeholder="留空則不計算小計"
@@ -369,7 +393,6 @@ export default function CaseMaterialModal({ isOpen, onClose, project }: Props) {
                             </div>
                         </div>
 
-                        {/* 按鈕列 */}
                         <div className="flex items-center justify-end gap-2 pt-1">
                             {editingId !== null && (
                                 <button

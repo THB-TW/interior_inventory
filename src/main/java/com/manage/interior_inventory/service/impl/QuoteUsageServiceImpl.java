@@ -84,6 +84,7 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
                 .materialType(materialType)
                 .unitPrice(unitPrice)
                 .lineCost(lineCost)
+                .orderBatch(project.getOrderBatch())
                 .build();
 
         caseMaterialRepository.save(caseMaterial);
@@ -170,9 +171,24 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
                     .quantity(cm.getQuantity())
                     .unitPrice(cm.getUnitPrice())
                     .lineCost(lineCost)
+                    .orderBatch(cm.getOrderBatch())
+                    .createdAt(cm.getCreatedAt())
+                    .materialUnit(cm.getMaterial().getUnit())
                     .build());
         }
         return result;
+    }
+
+    @Override
+    @Transactional
+    public QuoteUsageResponse confirmOrderBatch(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("找不到案件，id=" + projectId));
+
+        project.setOrderBatch(project.getOrderBatch() + 1);
+        projectRepository.save(project);
+
+        return buildUsageForProject(project);
     }
 
     // ====== 共用聚合邏輯 ======
@@ -243,6 +259,8 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
                 .address(project.getSiteAddress())
                 .description(project.getDescription())
                 .materials(materialDtos)
+                .quotation(getCaseMaterialLines(project.getId()))
+                .orderBatch(project.getOrderBatch())
                 .build();
     }
 

@@ -15,5 +15,7 @@ public class QuoteUsageResponse {
     String clientName;
     String address;
     String description;
+    int orderBatch;
     List<QuoteMaterialResponse> materials;
+    List<QuoteMaterialLineResponse> quotation;
 }

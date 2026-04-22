@@ -57,6 +57,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .description(request.description())
                 .salesUserId(request.salesUserId())
                 .status(ProjectStatus.INQUIRY) // 初始狀態
+                .orderBatch(1)
                 .build();
 
         Project savedProject = projectRepository.save(project);

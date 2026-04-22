@@ -74,3 +74,16 @@ export async function getCaseMaterialLines(
     );
     return (response.data || []) as QuoteMaterialLineResponse[];
 }
+
+/**
+ * 確定出貨，將 currentOrderBatch +1
+ * PATCH /api/quote/{projectId}/confirm-order-batch
+ */
+export async function confirmOrderBatch(
+    projectId: number,
+): Promise<QuoteProjectUsage> {
+    const response = await apiClient.patch<QuoteProjectUsage>(
+        `${BASE}/${projectId}/confirm-order-batch`,
+    );
+    return response.data;
+}

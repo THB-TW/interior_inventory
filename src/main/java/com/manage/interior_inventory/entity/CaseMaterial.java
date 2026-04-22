@@ -2,8 +2,10 @@ package com.manage.interior_inventory.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "case_materials")
@@ -40,4 +42,13 @@ public class CaseMaterial {
 
     @Column(name = "line_cost", precision = 10, scale = 2)
     private BigDecimal lineCost;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    // ★ 新增：叫貨次數（同一案件每次叫貨遞增）
+    @Column(name = "order_batch", nullable = false)
+    @Builder.Default
+    private Integer orderBatch = 1;
 }

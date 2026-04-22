@@ -49,6 +49,9 @@ public class Project {
     @Column(name = "sales_user_id", nullable = false)
     private Long salesUserId;
 
+    @Column(name = "order_batch")
+    private Integer orderBatch;
+
     @Column(name = "estimated_days")
     private Integer estimatedDays;
 

@@ -4,6 +4,7 @@ import com.manage.interior_inventory.entity.CaseMaterialType;
 import lombok.Builder;
 import lombok.Value;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Value
 @Builder
@@ -15,4 +16,7 @@ public class QuoteMaterialLineResponse {
     Integer quantity;
     BigDecimal unitPrice;
     BigDecimal lineCost;
+    LocalDateTime createdAt;
+    Integer orderBatch;
+    String materialUnit;
 }

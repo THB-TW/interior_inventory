@@ -65,6 +65,7 @@ CREATE TABLE projects (
    description    TEXT,
    status         VARCHAR(30)  NOT NULL,
    sales_user_id  BIGINT       NOT NULL,
+   order_batch		INTEGER NOT NULL DEFAULT 1,
    estimated_days INTEGER,
    created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
    updated_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
@@ -105,10 +106,12 @@ CREATE TABLE case_materials (
     id               BIGSERIAL PRIMARY KEY,
     case_id          BIGINT       NOT NULL,
     material_id      BIGINT       NOT NULL,
-    quantity INTEGER      NOT NULL DEFAULT 0,
-    material_type VARCHAR(20)    NOT NULL DEFAULT 'PURCHASE',
+    quantity 			INTEGER      NOT NULL DEFAULT 0,
+    material_type		VARCHAR(20)    NOT NULL DEFAULT 'PURCHASE',
     unit_price       NUMERIC(10,2),
     line_cost        NUMERIC(10,2),
+    created_at			TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+    order_batch		INTEGER NOT NULL DEFAULT 1,
     CONSTRAINT fk_case_materials_case
         FOREIGN KEY (case_id)    REFERENCES projects (id),
     CONSTRAINT fk_case_materials_material

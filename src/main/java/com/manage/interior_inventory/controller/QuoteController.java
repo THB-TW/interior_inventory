@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -78,4 +79,13 @@ public class QuoteController {
         return ApiResponse.success("查詢案件用料明細成功",
                 quoteUsageService.getCaseMaterialLines(projectId));
     }
+
+    @PatchMapping("/{projectId}/confirm-order-batch")
+    @Operation(summary = "確定出貨，推進叫貨批次", description = "使用者確認本次叫貨單出貨後呼叫，將該案件的 currentOrderBatch +1，之後新增的材料將歸屬於下一批次")
+    public ApiResponse<QuoteUsageResponse> confirmOrderBatch(
+            @PathVariable Long projectId) {
+        QuoteUsageResponse data = quoteUsageService.confirmOrderBatch(projectId);
+        return ApiResponse.success("確定出貨成功，批次已推進", data);
+    }
+
 }

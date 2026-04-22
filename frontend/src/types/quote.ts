@@ -27,6 +27,8 @@ export interface QuoteMaterialResponse {
     totalQuantity: number;
     unitPrice: number | null;
     lineCost: number | null;
+    createdAt: string;
+    orderBatch: number;
 }
 
 export interface QuoteProjectUsage {
@@ -36,7 +38,9 @@ export interface QuoteProjectUsage {
     clientName: string;
     address: string;
     description: string;
+    orderBatch: number;
     materials: QuoteMaterialResponse[];
+    quotation: QuoteMaterialLineResponse[];
 }
 
 export interface QuoteMaterialLineResponse {
@@ -50,4 +54,6 @@ export interface QuoteMaterialLineResponse {
     quantity: number;
     unitPrice: number | null;
     lineCost: number | null;
+    createdAt: string;
+    orderBatch: number;
 }

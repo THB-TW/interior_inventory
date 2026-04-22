@@ -21,4 +21,7 @@ public interface QuoteUsageService {
         void deleteProjectMaterial(Long projectId, Long caseMaterialId);
 
         List<QuoteMaterialLineResponse> getCaseMaterialLines(Long projectId);
+
+        QuoteUsageResponse confirmOrderBatch(Long projectId);
+
 }
