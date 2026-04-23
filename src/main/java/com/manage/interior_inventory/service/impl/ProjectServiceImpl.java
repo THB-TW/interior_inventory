@@ -1,11 +1,14 @@
 package com.manage.interior_inventory.service.impl;
 
+import com.manage.interior_inventory.dto.project.ContractUpdateRequest;
 import com.manage.interior_inventory.dto.project.ProjectCreateRequest;
 import com.manage.interior_inventory.dto.project.ProjectResponse;
 import com.manage.interior_inventory.entity.Project;
 import com.manage.interior_inventory.entity.ProjectStatus;
 import com.manage.interior_inventory.repository.ProjectRepository;
 import com.manage.interior_inventory.service.ProjectService;
+
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -144,5 +147,18 @@ public class ProjectServiceImpl implements ProjectService {
     private Project getProjectEntityOrThrow(Long id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("找不到該案件，ID: " + id));
+    }
+
+    @Override
+    @Transactional
+    public void updateContractInfo(Long id, ContractUpdateRequest request) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("找不到案件，id=" + id));
+
+        project.setContractAmount(request.contractAmount());
+        project.setReceivedAmount(request.receivedAmount());
+        project.setPaymentStatus(request.paymentStatus());
+
+        projectRepository.save(project);
     }
 }

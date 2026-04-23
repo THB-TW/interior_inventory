@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "projects")
@@ -54,6 +55,17 @@ public class Project {
 
     @Column(name = "estimated_days")
     private Integer estimatedDays;
+
+    @Column(name = "contract_amount", precision = 10, scale = 2)
+    private BigDecimal contractAmount; // 合約金額（nullable，尚未填時為 null）
+
+    @Column(name = "received_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal receivedAmount = BigDecimal.ZERO; // 已收款
+
+    @Column(name = "payment_status", length = 20)
+    @Builder.Default
+    private String paymentStatus = "PENDING"; // PENDING / PARTIAL / COMPLETED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

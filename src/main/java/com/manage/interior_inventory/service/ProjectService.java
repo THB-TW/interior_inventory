@@ -1,5 +1,6 @@
 package com.manage.interior_inventory.service;
 
+import com.manage.interior_inventory.dto.project.ContractUpdateRequest;
 import com.manage.interior_inventory.dto.project.ProjectCreateRequest;
 import com.manage.interior_inventory.dto.project.ProjectResponse;
 import com.manage.interior_inventory.entity.ProjectStatus;
@@ -10,7 +11,8 @@ public interface ProjectService {
 
     ProjectResponse createProject(ProjectCreateRequest request);
 
-    Page<ProjectResponse> getProjects(String clientName, String city, String district, ProjectStatus status, Pageable pageable);
+    Page<ProjectResponse> getProjects(String clientName, String city, String district, ProjectStatus status,
+            Pageable pageable);
 
     ProjectResponse getProjectById(Long id);
 
@@ -19,4 +21,6 @@ public interface ProjectService {
     void updateProjectStatus(Long id, ProjectStatus nextStatus);
 
     void cancelProject(Long id);
+
+    void updateContractInfo(Long id, ContractUpdateRequest request);
 }

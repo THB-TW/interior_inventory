@@ -1,10 +1,13 @@
 package com.manage.interior_inventory.controller;
 
 import com.manage.interior_inventory.common.ApiResponse;
+import com.manage.interior_inventory.dto.project.ContractUpdateRequest;
 import com.manage.interior_inventory.dto.project.ProjectCreateRequest;
 import com.manage.interior_inventory.dto.project.ProjectResponse;
+import com.manage.interior_inventory.dto.project.ContractUpdateRequest;
 import com.manage.interior_inventory.entity.ProjectStatus;
 import com.manage.interior_inventory.service.ProjectService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,9 +42,8 @@ public class ProjectController {
             @Parameter(description = "縣市") @RequestParam(required = false) String city,
             @Parameter(description = "區域") @RequestParam(required = false) String district,
             @Parameter(description = "案件狀態") @RequestParam(required = false) ProjectStatus status,
-            @Parameter(description = "分頁參數 (預設第0頁，每頁10筆，依建立時間遞減)") 
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        
+            @Parameter(description = "分頁參數 (預設第0頁，每頁10筆，依建立時間遞減)") @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
         Page<ProjectResponse> pageResult = projectService.getProjects(clientName, city, district, status, pageable);
         return ApiResponse.success("查詢成功", pageResult);
     }
@@ -77,5 +80,14 @@ public class ProjectController {
             @Parameter(description = "案件 ID", required = true) @PathVariable Long id) {
         projectService.cancelProject(id);
         return ApiResponse.success("案件已取消");
+    }
+
+    @PatchMapping("/{id}/contract")
+    @Operation(summary = "更新收款資訊", description = "設定合約金額、已收款金額與收款狀態")
+    public ApiResponse<Void> updateContractInfo(
+            @Parameter(description = "案件 ID", required = true) @PathVariable Long id,
+            @RequestBody @Valid ContractUpdateRequest request) {
+        projectService.updateContractInfo(id, request);
+        return ApiResponse.success("收款資訊更新成功");
     }
 }

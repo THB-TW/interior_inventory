@@ -95,6 +95,12 @@ public class ProjectEstimationServiceImpl implements ProjectEstimationService {
         estimation.setTotalAmount(totalMaterials + laborCost + request.profit());
 
         ProjectEstimation saved = estimationRepository.save(estimation);
+
+        projectRepository.findById(projectId).ifPresent(project -> {
+            project.setContractAmount(BigDecimal.valueOf(saved.getTotalAmount()));
+            projectRepository.save(project);
+        });
+
         return ProjectEstimationResponse.fromEntity(saved);
     }
 }
