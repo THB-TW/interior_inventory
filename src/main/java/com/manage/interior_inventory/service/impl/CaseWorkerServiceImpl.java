@@ -56,13 +56,17 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
                                 .map(CaseWorker::getTravelExpenses)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                BigDecimal totalWorkdays = rows.stream()
+                                .map(cw -> cw.getDaysWorked() != null ? cw.getDaysWorked() : BigDecimal.ONE)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
                 return WorkerProjectSummary.builder()
                                 .projectId(project.getId())
                                 .projectCode(project.getProjectCode())
                                 .clientName(project.getClientName())
                                 .address(project.getSiteAddress())
                                 .status(project.getStatus().name())
-                                .totalWorkdays(rows.size())
+                                .totalWorkdays(totalWorkdays)
                                 .totalWage(totalWage)
                                 .totalTravel(totalTravel)
                                 .totalWorkerCost(totalWage.add(totalTravel))
@@ -87,6 +91,14 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
 
                 Worker worker = resolveWorker(request.workerId());
 
+                BigDecimal daysWorked = request.daysWorked() != null
+                                ? request.daysWorked()
+                                : BigDecimal.ONE;
+                BigDecimal baseDailyWage = worker != null
+                                ? BigDecimal.valueOf(worker.getDailyWage())
+                                : request.dailyWage();
+                BigDecimal actualDailyWage = baseDailyWage.multiply(daysWorked);
+
                 LocalDate start = request.workday();
                 LocalDate end = request.workdayEnd() != null ? request.workdayEnd() : start;
 
@@ -99,7 +111,8 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
                         entities.add(CaseWorker.builder()
                                         .project(project)
                                         .worker(worker)
-                                        .dailyWage(request.dailyWage())
+                                        .dailyWage(actualDailyWage)
+                                        .daysWorked(daysWorked)
                                         .workday(date)
                                         .travelExpenses(request.travelExpenses())
                                         .build());
@@ -120,8 +133,19 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
 
                 Worker worker = resolveWorker(request.workerId());
 
+                BigDecimal daysWorked = request.daysWorked() != null
+                                ? request.daysWorked()
+                                : BigDecimal.ONE;
+
+                BigDecimal baseDailyWage = worker != null
+                                ? BigDecimal.valueOf(worker.getDailyWage())
+                                : request.dailyWage();
+
+                BigDecimal actualWage = baseDailyWage.multiply(daysWorked);
+
                 entity.setWorker(worker);
-                entity.setDailyWage(request.dailyWage());
+                entity.setDailyWage(actualWage);
+                entity.setDaysWorked(daysWorked);
                 entity.setWorkday(request.workday());
                 entity.setTravelExpenses(request.travelExpenses());
 

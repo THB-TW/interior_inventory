@@ -18,7 +18,7 @@ public class WorkerProjectSummary {
     private String clientName;
     private String address;
     private String status;
-    private int totalWorkdays; // 工作天數
+    private BigDecimal totalWorkdays; // 工作天數
     private BigDecimal totalWage; // 總工錢
     private BigDecimal totalTravel; // 總車馬費
     private BigDecimal totalWorkerCost; // 總工人支出 = totalWage + totalTravel

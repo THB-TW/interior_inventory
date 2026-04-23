@@ -20,6 +20,7 @@ type FormState = {
     id?: number;
     workerId: string;
     dailyWage: string;
+    daysWorked: string;   // 新增
     workday: string;
     workdayEnd: string;
     travelExpenses: string;
@@ -28,6 +29,7 @@ type FormState = {
 const emptyForm: FormState = {
     workerId: '',
     dailyWage: '',
+    daysWorked: '1',      // 預設整天
     workday: '',
     workdayEnd: '',
     travelExpenses: '0',
@@ -37,14 +39,12 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
     const queryClient = useQueryClient();
     const [form, setForm] = useState<FormState>(emptyForm);
 
-    // 取 workers 下拉選單
     const { data: workers } = useQuery<Worker[]>({
         queryKey: ['workers'],
         queryFn: getWorkers,
         enabled: isOpen,
     });
 
-    // 取此案件最新 case_workers（讓 modal 開啟後即時同步）
     const { data: caseWorkers, isLoading } = useQuery<CaseWorkerRow[]>({
         queryKey: ['case-workers', project.projectId],
         queryFn: () => getCaseWorkers(project.projectId),
@@ -55,7 +55,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
         if (!isOpen) setForm(emptyForm);
     }, [isOpen]);
 
-    // 當選擇師傅時，自動帶入預設日薪
+    // 當選擇師傅時，自動帶入預設日薪（日薪基準，後端會 × daysWorked）
     const handleWorkerChange = (workerId: string) => {
         const worker = workers?.find((w) => w.id === Number(workerId));
         setForm((f) => ({
@@ -70,6 +70,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
             createCaseWorker(project.projectId, {
                 workerId: form.workerId ? Number(form.workerId) : null,
                 dailyWage: Number(form.dailyWage),
+                daysWorked: Number(form.daysWorked),   // 新增
                 workday: form.workday,
                 workdayEnd: form.workdayEnd || undefined,
                 travelExpenses: Number(form.travelExpenses),
@@ -86,6 +87,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
             updateCaseWorker(project.projectId, form.id!, {
                 workerId: form.workerId ? Number(form.workerId) : null,
                 dailyWage: Number(form.dailyWage),
+                daysWorked: Number(form.daysWorked),   // 新增
                 workday: form.workday,
                 workdayEnd: form.workdayEnd || undefined,
                 travelExpenses: Number(form.travelExpenses),
@@ -112,6 +114,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
             id: row.id,
             workerId: row.workerId ? String(row.workerId) : '',
             dailyWage: String(row.dailyWage),
+            daysWorked: String(row.daysWorked),   // 新增
             workday: row.workday,
             workdayEnd: '',
             travelExpenses: String(row.travelExpenses),
@@ -165,7 +168,8 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                     <thead className="bg-slate-100 text-slate-600">
                                         <tr>
                                             <th className="px-3 py-2 text-left">工人名字</th>
-                                            <th className="px-3 py-2">工作日期</th>
+                                            <th className="px-3 py-2 text-center">工作日期</th>
+                                            <th className="px-3 py-2 text-center">天數</th>
                                             <th className="px-3 py-2 text-right">當天工錢</th>
                                             <th className="px-3 py-2 text-right">車馬費</th>
                                             <th className="px-3 py-2 text-right">操作</th>
@@ -175,7 +179,10 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         {caseWorkers.map((row) => (
                                             <tr key={row.id} className="border-t border-slate-200 hover:bg-slate-50">
                                                 <td className="px-3 py-2">{row.workerName || '—'}</td>
-                                                <td className="px-3 py-2">{row.workday}</td>
+                                                <td className="px-3 py-2 text-center">{row.workday}</td>
+                                                <td className="px-3 py-2 text-center">
+                                                    {row.daysWorked === 0.5 ? '半天' : '整天'}
+                                                </td>
                                                 <td className="px-3 py-2 text-right">
                                                     ${row.dailyWage.toLocaleString()}
                                                 </td>
@@ -214,6 +221,8 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                 {form.id ? `編輯紀錄 #${form.id}` : '新增工人紀錄'}
                             </h3>
                             <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+
+                                {/* 師傅選單 */}
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 mb-1">
                                         師傅（選填）
@@ -231,6 +240,23 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         ))}
                                     </select>
                                 </div>
+
+                                {/* 施作天數 */}
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                                        施作天數
+                                    </label>
+                                    <select
+                                        value={form.daysWorked}
+                                        onChange={(e) => setForm((f) => ({ ...f, daysWorked: e.target.value }))}
+                                        className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                                    >
+                                        <option value="1">整天（1 天）</option>
+                                        <option value="0.5">半天（0.5 天）</option>
+                                    </select>
+                                </div>
+
+                                {/* 施作日期（起） */}
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 mb-1">
                                         施作日期（起）
@@ -243,6 +269,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                     />
                                 </div>
 
+                                {/* 施作日期（迄），僅新增時顯示 */}
                                 {!form.id && (
                                     <div>
                                         <label className="block text-xs font-medium text-slate-600 mb-1">
@@ -258,9 +285,11 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         />
                                     </div>
                                 )}
+
+                                {/* 日薪基準 */}
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                                        當天工錢（元）
+                                        日薪基準（元）
                                     </label>
                                     <input
                                         type="number"
@@ -270,7 +299,14 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                                         placeholder="例如：3000"
                                     />
+                                    {form.dailyWage && (
+                                        <p className="text-xs text-slate-400 mt-1">
+                                            實際工錢 = ${(Number(form.dailyWage) * Number(form.daysWorked)).toLocaleString()}
+                                        </p>
+                                    )}
                                 </div>
+
+                                {/* 車馬費 */}
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 mb-1">
                                         車馬費（元）
@@ -284,6 +320,8 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         placeholder="例如：200"
                                     />
                                 </div>
+
+                                {/* 操作按鈕 */}
                                 <div className="md:col-span-2 flex justify-end gap-2">
                                     {form.id && (
                                         <button

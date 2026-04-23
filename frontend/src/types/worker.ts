@@ -18,6 +18,7 @@ export interface CaseWorkerRow {
   workerName: string | null;    // worker 被刪時為 null
   dailyWage: number;
   workday: string;              // ISO date "2025-04-01"
+  daysWorked: number;
   travelExpenses: number;
 }
 
@@ -40,5 +41,6 @@ export interface CaseWorkerRequest {
   dailyWage: number;
   workday: string;             // ISO date "2025-04-01"
   workdayEnd?: string;            // ISO date "2025-04-01"
+  daysWorked: number;
   travelExpenses: number;
 }

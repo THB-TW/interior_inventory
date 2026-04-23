@@ -10,6 +10,7 @@ public record CaseWorkerResponse(
         String workerName, // 從 worker.nickname 帶出，worker 被刪時為 null
         BigDecimal dailyWage,
         LocalDate workday,
+        BigDecimal daysWorked,
         BigDecimal travelExpenses) {
     public static CaseWorkerResponse fromEntity(CaseWorker cw) {
         return new CaseWorkerResponse(
@@ -18,6 +19,7 @@ public record CaseWorkerResponse(
                 cw.getWorker() != null ? cw.getWorker().getNickname() : null,
                 cw.getDailyWage(),
                 cw.getWorkday(),
+                cw.getDaysWorked(),
                 cw.getTravelExpenses());
     }
 }
