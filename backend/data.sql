@@ -455,17 +455,24 @@ VALUES
    15400.00, FALSE);
 
 -- === 預設師傅名單 ===
-INSERT INTO workers (nickname, daily_wage) VALUES ('阿信師', 3000);
-INSERT INTO workers (nickname, daily_wage) VALUES ('木工老張', 3500);
-INSERT INTO workers (nickname, daily_wage) VALUES ('水電阿吉', 2800);
-INSERT INTO workers (nickname, daily_wage) VALUES ('文全', 2950);
-INSERT INTO workers (nickname, daily_wage) VALUES ('小量', 3350);
-INSERT INTO workers (nickname, daily_wage) VALUES ('阿葉', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('芋頭', 3450);
-INSERT INTO workers (nickname, daily_wage) VALUES ('浩威', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('煥明', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('換騎', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('陳敏', 2150);
+INSERT INTO workers (nickname, daily_wage, wage_type, share_rate) VALUES
+  -- 日薪制（原有 11 位）
+  ('阿信師',    3000, 'DAILY',         NULL),
+  ('木工老張',  3500, 'DAILY',         NULL),
+  ('水電阿吉',  2800, 'DAILY',         NULL),
+  ('文全',      2950, 'DAILY',         NULL),
+  ('小量',      3350, 'DAILY',         NULL),
+  ('阿葉',      3550, 'DAILY',         NULL),
+  ('芋頭',      3450, 'DAILY',         NULL),
+  ('浩威',      3550, 'DAILY',         NULL),
+  ('煥明',      3550, 'DAILY',         NULL),
+  ('換騎',      3550, 'DAILY',         NULL),
+  ('陳敏',      2150, 'DAILY',         NULL),
+  -- 專案分潤制（新增 4 位，daily_wage=0 因為不按日計薪）
+  ('老林設計師', 0,   'PROJECT_SHARE', 0.0800),  -- 抽合約金額 8%
+  ('阿國統包',   0,   'PROJECT_SHARE', 0.1200),  -- 抽合約金額 12%
+  ('小陳監工',   0,   'PROJECT_SHARE', 0.0600),  -- 抽合約金額 6%
+  ('大志師傅',   0,   'PROJECT_SHARE', 0.1000);  -- 抽合約金額 10%
 
 -- ============================================================
 -- case_workers 測試資料
@@ -857,7 +864,150 @@ INSERT INTO case_workers (case_id, worker_id, daily_wage, workday, travel_expens
 (21, 2, 3500, '2026-04-22', 250, 1.0),
 (21, 11, 2150, '2026-04-22', 250, 0.5);
 
+INSERT INTO worker_salary_periods (period_start, period_end, label, status) VALUES
+('2026-01-01', '2026-01-05', '2026年1月上旬', 'PAID'),
+('2026-01-06', '2026-01-20', '2026年1月下旬', 'PAID'),
+('2026-02-01', '2026-02-05', '2026年2月上旬', 'PAID'),
+('2026-02-06', '2026-02-20', '2026年2月下旬', 'PAID'),
+('2026-03-01', '2026-03-05', '2026年3月上旬', 'PAID'),
+('2026-03-06', '2026-03-20', '2026年3月下旬', 'PAID'),
+('2026-04-01', '2026-04-05', '2026年4月上旬', 'CONFIRMED'),
+('2026-04-06', '2026-04-20', '2026年4月下旬', 'PENDING');
 
+-- ── 1月上旬 (period_id=1) ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (1, 1,  1, 'DAILY', 7500.00, 200, 0,   7700.00, TRUE, '2026-01-05'),
+  (1, 2,  1, 'DAILY', 6125.00, 200, 0,   6325.00, TRUE, '2026-01-05'),
+  (1, 4,  1, 'DAILY', 5900.00, 150, 0,   6050.00, TRUE, '2026-01-05'),
+  (1, 5,  2, 'DAILY', 5025.00,   0, 0,   5025.00, TRUE, '2026-01-05'),
+  (1, 6,  2, 'DAILY', 5325.00,   0, 0,   5325.00, TRUE, '2026-01-05'),
+  (1, 7,  2, 'DAILY', 5175.00,   0, 0,   5175.00, TRUE, '2026-01-05'),
+  (1, 8,  2, 'DAILY', 3550.00,   0, 0,   3550.00, TRUE, '2026-01-05'),
+  (1, 1,  3, 'DAILY', 4500.00, 300, 0,   4800.00, TRUE, '2026-01-05'),
+  (1, 2,  3, 'DAILY', 3500.00, 300, 0,   3800.00, TRUE, '2026-01-05'),
+  (1, 3,  4, 'DAILY', 5600.00, 250, 0,   5850.00, TRUE, '2026-01-05'),
+  (1, 4,  4, 'DAILY', 4425.00, 250, 0,   4675.00, TRUE, '2026-01-05');
+
+-- ── 1月下旬 (period_id=2) ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (2, 1,  1, 'DAILY',  9000.00, 200,    0,  9200.00, TRUE, '2026-01-20'),
+  (2, 2,  1, 'DAILY',  7000.00, 200,  200,  7400.00, TRUE, '2026-01-20'), -- 加給200
+  (2, 3,  1, 'DAILY',  5600.00, 150,    0,  5750.00, TRUE, '2026-01-20'),
+  (2, 4,  1, 'DAILY',  4425.00, 150,    0,  4575.00, TRUE, '2026-01-20'),
+  (2, 5,  2, 'DAILY', 11725.00,   0,    0, 11725.00, TRUE, '2026-01-20'),
+  (2, 6,  2, 'DAILY', 10650.00,   0,    0, 10650.00, TRUE, '2026-01-20'),
+  (2, 7,  2, 'DAILY',  8625.00,   0,    0,  8625.00, TRUE, '2026-01-20'),
+  (2, 8,  2, 'DAILY',  7100.00,   0,    0,  7100.00, TRUE, '2026-01-20'),
+  (2, 9,  2, 'DAILY',  7100.00,   0,    0,  7100.00, TRUE, '2026-01-20'),
+  (2, 2,  3, 'DAILY',  7000.00, 300,    0,  7300.00, TRUE, '2026-01-20'),
+  (2, 11, 3, 'DAILY',  4300.00, 300,    0,  4600.00, TRUE, '2026-01-20'),
+  (2, 3,  4, 'DAILY',  2800.00, 250,    0,  3050.00, TRUE, '2026-01-20'),
+  (2, 4,  4, 'DAILY',  1475.00, 250,    0,  1725.00, TRUE, '2026-01-20');
+
+-- ── 2月上旬 (period_id=3) ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (3, 1,  5, 'DAILY', 15000.00, 200, 0, 15200.00, TRUE, '2026-02-05'),
+  (3, 3,  5, 'DAILY',  7000.00, 200, 0,  7200.00, TRUE, '2026-02-05'),
+  (3, 5,  6, 'DAILY', 13400.00, 400, 0, 13800.00, TRUE, '2026-02-05'),
+  (3, 6,  6, 'DAILY',  8875.00, 400, 0,  9275.00, TRUE, '2026-02-05'),
+  (3, 7,  6, 'DAILY',  6900.00, 400, 0,  7300.00, TRUE, '2026-02-05'),
+  (3, 8,  6, 'DAILY',  7100.00, 400, 0,  7500.00, TRUE, '2026-02-05'),
+  (3, 2,  7, 'DAILY', 21000.00, 500, 0, 21500.00, TRUE, '2026-02-05'),
+  (3, 11, 7, 'DAILY',  6450.00, 500, 0,  6950.00, TRUE, '2026-02-05');
+
+-- ── 2月上旬：分潤制（period_id=NULL，結案觸發，UNIQUE 限制保護） ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (NULL, 12, 1, 'PROJECT_SHARE', 14800.00, 0, 0, 14800.00, TRUE, '2026-02-05'), -- 185000×8%
+  (NULL, 13, 2, 'PROJECT_SHARE', 50400.00, 0, 0, 50400.00, TRUE, '2026-02-05'); -- 420000×12%
+
+-- ── 2月下旬 (period_id=4) ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (4, 1,  8, 'DAILY', 18000.00, 350,    0, 18350.00, TRUE, '2026-02-20'),
+  (4, 3,  8, 'DAILY', 11200.00, 350,    0, 11550.00, TRUE, '2026-02-20'),
+  (4, 4,  8, 'DAILY', 10325.00, 350, -500, 10175.00, TRUE, '2026-02-20'), -- 扣減500
+  (4, 1,  9, 'DAILY',  6000.00,   0,    0,  6000.00, TRUE, '2026-02-20'),
+  (4, 2,  9, 'DAILY', 14000.00,   0,    0, 14000.00, TRUE, '2026-02-20'),
+  (4, 11, 9, 'DAILY',  7525.00,   0,    0,  7525.00, TRUE, '2026-02-20'),
+  (4, 5,  6, 'DAILY', 10050.00, 400,    0, 10450.00, TRUE, '2026-02-20'),
+  (4, 6,  6, 'DAILY',  7100.00, 400,    0,  7500.00, TRUE, '2026-02-20'),
+  (4, 7,  6, 'DAILY',  6900.00, 400,    0,  7300.00, TRUE, '2026-02-20'),
+  (4, 8,  6, 'DAILY',  7100.00, 400,    0,  7500.00, TRUE, '2026-02-20'),
+  (4, 9,  6, 'DAILY',  7100.00, 400,    0,  7500.00, TRUE, '2026-02-20');
+
+-- ── 2月下旬：分潤制 ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (NULL, 12, 3, 'PROJECT_SHARE', 12480.00, 0, 0, 12480.00, TRUE, '2026-02-20'), -- 156000×8%
+  (NULL, 12, 4, 'PROJECT_SHARE',  7840.00, 0, 0,  7840.00, TRUE, '2026-02-20'); -- 98000×8%
+
+-- ── 3月上旬 (period_id=5) ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (5, 2,  10, 'DAILY', 17500.00,   0, 0, 17500.00, TRUE, '2026-03-05'),
+  (5, 11, 10, 'DAILY',  8600.00,   0, 0,  8600.00, TRUE, '2026-03-05'),
+  (5, 3,  11, 'DAILY', 14000.00, 300, 0, 14300.00, TRUE, '2026-03-05'),
+  (5, 4,  11, 'DAILY', 14750.00, 300, 0, 15050.00, TRUE, '2026-03-05'),
+  (5, 1,  11, 'DAILY',  4500.00, 300, 0,  4800.00, TRUE, '2026-03-05'),
+  (5, 5,  12, 'DAILY', 13400.00, 200, 0, 13600.00, TRUE, '2026-03-05'),
+  (5, 6,  12, 'DAILY', 10650.00, 200, 0, 10850.00, TRUE, '2026-03-05'),
+  (5, 7,  12, 'DAILY', 10350.00, 200, 0, 10550.00, TRUE, '2026-03-05');
+
+-- ── 3月上旬：分潤制 ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (NULL, 13, 5, 'PROJECT_SHARE', 13440.00, 0, 0, 13440.00, TRUE, '2026-03-05'), -- 112000×12%
+  (NULL, 13, 6, 'PROJECT_SHARE', 45600.00, 0, 0, 45600.00, TRUE, '2026-03-05'); -- 380000×12%
+
+-- ── 3月下旬 (period_id=6) ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (6, 1,  11, 'DAILY', 7500.00, 300, 0,  7800.00, TRUE, '2026-03-20'),
+  (6, 3,  11, 'DAILY', 8400.00, 300, 0,  8700.00, TRUE, '2026-03-20'),
+  (6, 4,  11, 'DAILY', 7375.00, 300, 0,  7675.00, TRUE, '2026-03-20'),
+  (6, 5,  12, 'DAILY', 6700.00, 200, 0,  6900.00, TRUE, '2026-03-20'),
+  (6, 6,  12, 'DAILY', 7100.00, 200, 0,  7300.00, TRUE, '2026-03-20'),
+  (6, 7,  12, 'DAILY', 5175.00, 200, 0,  5375.00, TRUE, '2026-03-20');
+
+-- ── 3月下旬：分潤制 ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid, paid_at)
+VALUES
+  (NULL, 12, 7, 'PROJECT_SHARE',  6720.00, 0, 0,  6720.00, TRUE, '2026-03-20'), -- 84000×8%
+  (NULL, 12, 8, 'PROJECT_SHARE', 15600.00, 0, 0, 15600.00, TRUE, '2026-03-20'); -- 195000×8%
+
+-- ── 4月上旬 (period_id=7)：CONFIRMED 待付 ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid)
+VALUES
+  (7, 1, 13, 'DAILY', 15000.00, 400, 0, 15400.00, FALSE),
+  (7, 2, 13, 'DAILY', 10500.00, 400, 0, 10900.00, FALSE),
+  (7, 3, 13, 'DAILY',  8400.00, 400, 0,  8800.00, FALSE),
+  (7, 5, 13, 'DAILY', 13400.00, 400, 0, 13800.00, FALSE),
+  (7, 6, 13, 'DAILY',  7100.00, 400, 0,  7500.00, FALSE),
+  (7, 7, 13, 'DAILY',  6900.00, 400, 0,  7300.00, FALSE);
+
+-- ── 4月下旬 (period_id=8)：PENDING 計算中 ──
+INSERT INTO worker_salary_items
+  (period_id, worker_id, project_id, wage_type, base_amount, travel_expenses, adjustment, final_amount, is_paid)
+VALUES
+  (8, 1,  13, 'DAILY', 6000.00, 400, 0, 6400.00, FALSE),
+  (8, 4,  13, 'DAILY', 5900.00, 400, 0, 6300.00, FALSE),
+  (8, 8,  13, 'DAILY', 7100.00, 400, 0, 7500.00, FALSE),
+  (8, 11, 13, 'DAILY', 2150.00, 400, 0, 2550.00, FALSE);
 
 -- === 測試用案件估價單 ===
 INSERT INTO project_estimations (project_id, labor_cost, profit, total_amount)
