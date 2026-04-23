@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getWorkerOverview } from '@/services/workerService';
 import type { WorkerProjectSummary } from '@/types/worker';
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '@/types/project';
-import { Loader2, ChevronDown, ChevronUp, Users, Search, HardHat } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, Users, Search, HardHat, FileText } from 'lucide-react';
 import WorkerManagementModal from '@/components/worker/WorkerManagementModal';
 import CaseWorkerModal from '@/components/worker/CaseWorkerModal';
 
 export default function WorkerOverviewPage() {
+    const navigate = useNavigate();
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [searchKeyword, setSearchKeyword] = useState('');
     const [isWorkerMgmtOpen, setIsWorkerMgmtOpen] = useState(false);
@@ -46,7 +48,6 @@ export default function WorkerOverviewPage() {
         );
     }
 
-    // 前端 filter：案號、客戶名稱、地址、工人姓名
     const filteredList = workerList.filter((project) => {
         if (!searchKeyword.trim()) return true;
         const kw = searchKeyword.trim().toLowerCase();
@@ -70,7 +71,6 @@ export default function WorkerOverviewPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* 搜尋欄 */}
                         <div className="relative">
                             <Search
                                 size={14}
@@ -132,6 +132,13 @@ export default function WorkerOverviewPage() {
                                         {/* 右側：操作按鈕群 */}
                                         <div className="flex items-center gap-2">
                                             <button
+                                                onClick={() => navigate(`/workers/${project.projectId}/report`)}
+                                                className="flex items-center gap-1 text-sm text-slate-500 hover:text-[var(--color-primary)] border border-slate-200 px-2 py-1 rounded-md hover:border-[var(--color-primary)] transition-colors"
+                                            >
+                                                <FileText size={14} />
+                                                工資報表
+                                            </button>
+                                            <button
                                                 onClick={() =>
                                                     setExpandedId(isExpanded ? null : project.projectId)
                                                 }
@@ -173,7 +180,7 @@ export default function WorkerOverviewPage() {
                                                         ${project.totalTravel.toLocaleString()}
                                                     </span>
                                                 </div>
-                                                <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200 border-[var(--color-primary)] text-xs flex items-center gap-1.5">
+                                                <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs flex items-center gap-1.5">
                                                     <span className="text-slate-400">總工人支出</span>
                                                     <span className="font-bold text-[var(--color-primary)]">
                                                         ${project.totalWorkerCost.toLocaleString()}
@@ -183,7 +190,7 @@ export default function WorkerOverviewPage() {
                                         )}
                                     </div>
 
-                                    {/* 展開區：工人明細 table */}
+                                    {/* 展開區：工人明細 table（group by worker） */}
                                     {isExpanded && (
                                         <div className="px-4 py-4">
                                             {project.workers.length === 0 ? (
@@ -196,35 +203,50 @@ export default function WorkerOverviewPage() {
                                                         <thead className="bg-slate-100 text-slate-600">
                                                             <tr>
                                                                 <th className="px-3 py-2">工人名字</th>
-                                                                <th className="px-3 py-2">施作日期</th>
-                                                                <th className="px-3 py-2 text-right">當天工錢</th>
-                                                                <th className="px-3 py-2 text-right">車馬費</th>
+                                                                <th className="px-3 py-2 text-center">施作天數</th>
+                                                                <th className="px-3 py-2 text-right">總工錢</th>
+                                                                <th className="px-3 py-2 text-right">總車馬費</th>
                                                                 <th className="px-3 py-2 text-right">小計</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {project.workers.map((w) => (
+                                                            {Object.values(
+                                                                project.workers.reduce<Record<string, {
+                                                                    workerName: string | null;
+                                                                    workerId: number | null;
+                                                                    totalWage: number;
+                                                                    totalTravel: number;
+                                                                    count: number;
+                                                                }>>((acc, w) => {
+                                                                    const key = w.workerId != null
+                                                                        ? String(w.workerId)
+                                                                        : `unnamed-${w.workerName}`;
+                                                                    if (!acc[key]) {
+                                                                        acc[key] = {
+                                                                            workerName: w.workerName,
+                                                                            workerId: w.workerId,
+                                                                            totalWage: w.dailyWage,
+                                                                            totalTravel: w.travelExpenses,
+                                                                            count: 1,
+                                                                        };
+                                                                    } else {
+                                                                        acc[key].totalWage += w.dailyWage;
+                                                                        acc[key].totalTravel += w.travelExpenses;
+                                                                        acc[key].count += 1;
+                                                                    }
+                                                                    return acc;
+                                                                }, {})
+                                                            ).map((g) => (
                                                                 <tr
-                                                                    key={w.id}
+                                                                    key={g.workerId ?? g.workerName}
                                                                     className="border-t border-slate-200"
                                                                 >
-                                                                    <td className="px-3 py-2">
-                                                                        {w.workerName || '—'}
-                                                                    </td>
-                                                                    <td className="px-3 py-2">
-                                                                        {w.workday}
-                                                                        <span className="ml-2 text-xs text-slate-400">
-                                                                            （本案 {project.workers.filter((r) => r.workerId === w.workerId).length} 天）
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-3 py-2 text-right">
-                                                                        ${w.dailyWage.toLocaleString()}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 text-right">
-                                                                        ${w.travelExpenses.toLocaleString()}
-                                                                    </td>
+                                                                    <td className="px-3 py-2">{g.workerName || '—'}</td>
+                                                                    <td className="px-3 py-2 text-center">{g.count} 天</td>
+                                                                    <td className="px-3 py-2 text-right">${g.totalWage.toLocaleString()}</td>
+                                                                    <td className="px-3 py-2 text-right">${g.totalTravel.toLocaleString()}</td>
                                                                     <td className="px-3 py-2 text-right font-medium">
-                                                                        ${(w.dailyWage + w.travelExpenses).toLocaleString()}
+                                                                        ${(g.totalWage + g.totalTravel).toLocaleString()}
                                                                     </td>
                                                                 </tr>
                                                             ))}

@@ -165,7 +165,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                     <thead className="bg-slate-100 text-slate-600">
                                         <tr>
                                             <th className="px-3 py-2 text-left">工人名字</th>
-                                            <th className="px-3 py-2">工作天數</th>
+                                            <th className="px-3 py-2">工作日期</th>
                                             <th className="px-3 py-2 text-right">當天工錢</th>
                                             <th className="px-3 py-2 text-right">車馬費</th>
                                             <th className="px-3 py-2 text-right">操作</th>
@@ -175,9 +175,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         {caseWorkers.map((row) => (
                                             <tr key={row.id} className="border-t border-slate-200 hover:bg-slate-50">
                                                 <td className="px-3 py-2">{row.workerName || '—'}</td>
-                                                <td className="px-3 py-2 text-center">
-                                                    {caseWorkers.filter((r) => r.workerId === row.workerId).length} 天
-                                                </td>
+                                                <td className="px-3 py-2">{row.workday}</td>
                                                 <td className="px-3 py-2 text-right">
                                                     ${row.dailyWage.toLocaleString()}
                                                 </td>

@@ -318,6 +318,14 @@ VALUES
 INSERT INTO workers (nickname, daily_wage) VALUES ('阿信師', 3000);
 INSERT INTO workers (nickname, daily_wage) VALUES ('木工老張', 3500);
 INSERT INTO workers (nickname, daily_wage) VALUES ('水電阿吉', 2800);
+INSERT INTO workers (nickname, daily_wage) VALUES ('文全', 2950);
+INSERT INTO workers (nickname, daily_wage) VALUES ('小量', 3350);
+INSERT INTO workers (nickname, daily_wage) VALUES ('阿葉', 3550);
+INSERT INTO workers (nickname, daily_wage) VALUES ('芋頭', 3450);
+INSERT INTO workers (nickname, daily_wage) VALUES ('浩威', 3550);
+INSERT INTO workers (nickname, daily_wage) VALUES ('煥明', 3550);
+INSERT INTO workers (nickname, daily_wage) VALUES ('換騎', 3550);
+INSERT INTO workers (nickname, daily_wage) VALUES ('陳敏', 2150);
 
 -- === 測試用案件估價單 ===
 INSERT INTO project_estimations (project_id, labor_cost, profit, total_amount)
