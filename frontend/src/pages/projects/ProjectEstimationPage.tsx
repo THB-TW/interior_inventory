@@ -1,11 +1,14 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { getProjectById } from '@/services/projectService';
 import { getEstimation, saveEstimation } from '@/services/estimationService';
+import { getMaterials } from "@/services/materialService";
 import { getWorkers } from '@/services/workerService';
 import { ArrowLeft, Plus, Trash2, Save, Loader2, Calculator } from 'lucide-react';
 import type { EstimationItemSaveRequest, EstimationWorkerItemSaveRequest } from '@/types/estimation';
+import type { MaterialResponse } from "@/types/material";
 
 export default function ProjectEstimationPage() {
   const { id } = useParams();
@@ -16,6 +19,11 @@ export default function ProjectEstimationPage() {
   const [items, setItems] = useState<(EstimationItemSaveRequest & { _key: string })[]>([]);
   const [workerItems, setWorkerItems] = useState<(EstimationWorkerItemSaveRequest & { _key: string })[]>([]);
   const [profit, setProfit] = useState<number>(0);
+  const [materials, setMaterials] = useState<MaterialResponse[]>([]);
+
+  useEffect(() => {
+    getMaterials().then(setMaterials).catch(console.error);
+  }, []);
 
   // Queries
   const { data: project } = useQuery({
@@ -42,7 +50,6 @@ export default function ProjectEstimationPage() {
       setWorkerItems(existingEstimation.workerItems.map(item => ({ ...item, _key: Math.random().toString(36) })));
       setProfit(existingEstimation.profit);
     } else if (!isEstimationLoading) {
-      // Default one empty material item
       if (items.length === 0) {
         setItems([{ materialName: '', quantity: 1, unitPrice: 0, _key: Math.random().toString(36) }]);
       }
@@ -59,12 +66,28 @@ export default function ProjectEstimationPage() {
       return sum + (item.days * worker.dailyWage);
     }, 0);
   }, [workerItems, workers]);
-  
+
   const grandTotal = materialsTotal + laborTotal + (profit || 0);
+
+  // 只顯示啟用中的材料
+  const activeMaterials = materials.filter(m => m.isActive);
 
   // Handlers
   const addMaterial = () => setItems([...items, { materialName: '', quantity: 1, unitPrice: 0, _key: Math.random().toString(36) }]);
   const removeMaterial = (index: number) => setItems(items.filter((_, i) => i !== index));
+
+  // 選擇材料下拉時：同步更新 materialName + 自動帶入 defaultPrice
+  const handleMaterialSelect = (index: number, selectedName: string) => {
+    const found = activeMaterials.find(m => m.name === selectedName);
+    const newItems = [...items];
+    newItems[index] = {
+      ...newItems[index],
+      materialName: selectedName,
+      unitPrice: found?.defaultPrice ?? newItems[index].unitPrice,
+    };
+    setItems(newItems);
+  };
+
   const updateMaterial = (index: number, field: keyof EstimationItemSaveRequest, value: string | number) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -87,7 +110,7 @@ export default function ProjectEstimationPage() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimation', projectId] });
-      navigate('/projects'); // Navigate back to project list
+      navigate('/projects');
     }
   });
 
@@ -96,7 +119,7 @@ export default function ProjectEstimationPage() {
       {/* Header */}
       <header className="bg-white border-b border-[var(--color-border)] px-6 py-4 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => navigate('/projects')}
             className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
           >
@@ -131,7 +154,7 @@ export default function ProjectEstimationPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          
+
           {/* Materials Section */}
           <section className="bg-white rounded-xl border border-[var(--color-border)] shadow-sm overflow-hidden">
             <div className="bg-slate-50 px-5 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
@@ -142,7 +165,7 @@ export default function ProjectEstimationPage() {
                 小計: ${materialsTotal.toLocaleString()}
               </span>
             </div>
-            
+
             <div className="p-5">
               <div className="space-y-3">
                 {/* Headers */}
@@ -155,15 +178,23 @@ export default function ProjectEstimationPage() {
 
                 {items.map((item, index) => (
                   <div key={item._key} className="grid grid-cols-12 gap-3 items-center group relative">
+
+                    {/* ✅ 材料名稱：改為下拉選單 */}
                     <div className="col-span-12 md:col-span-5">
-                      <input
-                        type="text"
-                        placeholder="請輸入材料名稱"
+                      <select
                         value={item.materialName}
-                        onChange={(e) => updateMaterial(index, 'materialName', e.target.value)}
-                        className="w-full h-10 px-3 rounded-md border border-slate-300 focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] outline-none text-sm"
-                      />
+                        onChange={(e) => handleMaterialSelect(index, e.target.value)}
+                        className="w-full h-10 px-3 rounded-md border border-slate-300 focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] outline-none text-sm bg-white"
+                      >
+                        <option value="">請選擇材料</option>
+                        {activeMaterials.map(m => (
+                          <option key={m.id} value={m.name}>
+                            {m.name}（{m.unit}）
+                          </option>
+                        ))}
+                      </select>
                     </div>
+
                     <div className="col-span-4 md:col-span-2">
                       <input
                         type="number"
@@ -173,6 +204,8 @@ export default function ProjectEstimationPage() {
                         className="w-full h-10 px-3 rounded-md border border-slate-300 focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] outline-none text-sm"
                       />
                     </div>
+
+                    {/* ✅ 單價：自動帶入但可手動修改 */}
                     <div className="col-span-5 md:col-span-3 relative">
                       <span className="absolute left-3 top-2.5 text-slate-400">$</span>
                       <input
@@ -183,6 +216,7 @@ export default function ProjectEstimationPage() {
                         className="w-full h-10 pl-7 pr-3 rounded-md border border-slate-300 focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] outline-none text-sm"
                       />
                     </div>
+
                     <div className="col-span-3 md:col-span-2 text-right pr-8 lg:pr-10 font-medium text-slate-700">
                       ${((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}
                     </div>
@@ -195,6 +229,13 @@ export default function ProjectEstimationPage() {
                   </div>
                 ))}
               </div>
+
+              {/* ✅ 材料清單為空時提示 */}
+              {activeMaterials.length === 0 && (
+                <p className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
+                  目前系統中沒有任何材料，請先至「材料管理」新增。
+                </p>
+              )}
 
               <button
                 onClick={addMaterial}
@@ -215,7 +256,7 @@ export default function ProjectEstimationPage() {
                 小計: ${laborTotal.toLocaleString()}
               </span>
             </div>
-            
+
             <div className="p-5">
               <div className="space-y-3">
                 <div className="grid grid-cols-12 gap-3 text-xs font-semibold text-slate-500 uppercase px-1">
@@ -228,7 +269,7 @@ export default function ProjectEstimationPage() {
                 {workerItems.map((item, index) => {
                   const worker = workers?.find(w => w.id === item.workerId);
                   const subtotal = worker ? item.days * worker.dailyWage : 0;
-                  
+
                   return (
                     <div key={item._key} className="grid grid-cols-12 gap-3 items-center group relative">
                       <div className="col-span-12 md:col-span-5">
@@ -292,7 +333,7 @@ export default function ProjectEstimationPage() {
               <h2 className="font-semibold text-slate-800">3. 利潤與結算</h2>
             </div>
             <div className="p-5 flex flex-col md:flex-row gap-8 justify-between">
-              
+
               <div className="flex-1 max-w-sm">
                 <label className="block text-sm font-medium text-slate-700 mb-2">額外抓的利潤 (元)</label>
                 <div className="relative">
@@ -336,9 +377,9 @@ export default function ProjectEstimationPage() {
 
           {/* Error Message */}
           {saveMutation.isError && (
-             <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">
-               儲存失敗: {saveMutation.error instanceof Error ? saveMutation.error.message : '未知錯誤'}
-             </div>
+            <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">
+              儲存失敗: {saveMutation.error instanceof Error ? saveMutation.error.message : '未知錯誤'}
+            </div>
           )}
         </div>
       </div>

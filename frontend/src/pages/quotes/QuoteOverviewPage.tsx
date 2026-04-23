@@ -1,20 +1,20 @@
-// frontend/src/pages/quotes/QuoteOverviewPage.tsx
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getQuoteOverview } from '@/services/quoteService';
 import type { QuoteProjectUsage } from '@/types/quote';
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS, ProjectStatus } from '@/types/project';
-import { Loader2, ChevronDown, ChevronUp, FileText, Plus, ClipboardList, Search, Filter } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, FileText, Plus, ClipboardList, Search, Filter, Lightbulb } from 'lucide-react';
 import MaterialManagementModal from '@/components/material/MaterialManagementModal';
 import CaseMaterialModal from '@/components/quote/CaseMaterialModal';
 import OrderSheetModal from '@/components/quote/OrderSheetModal';
+import EstimationImportDrawer from '@/components/quote/EstimationImportDrawer';
 import Pagination from '@/components/common/Pagination';
 
 const PAGE_SIZE = 5;
 
 const STATUS_OPTIONS: { value: ProjectStatus | ''; label: string }[] = [
     { value: '', label: '所有狀態' },
+    { value: ProjectStatus.QUOTING, label: PROJECT_STATUS_LABELS[ProjectStatus.QUOTING] },
     { value: ProjectStatus.CONFIRMED, label: PROJECT_STATUS_LABELS[ProjectStatus.CONFIRMED] },
     { value: ProjectStatus.IN_PROGRESS, label: PROJECT_STATUS_LABELS[ProjectStatus.IN_PROGRESS] },
     { value: ProjectStatus.INSPECTION, label: PROJECT_STATUS_LABELS[ProjectStatus.INSPECTION] },
@@ -29,6 +29,7 @@ export default function QuoteOverviewPage() {
     const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
     const [materialModalProject, setMaterialModalProject] = useState<QuoteProjectUsage | null>(null);
     const [orderSheetProject, setOrderSheetProject] = useState<QuoteProjectUsage | null>(null);
+    const [importDrawerProject, setImportDrawerProject] = useState<QuoteProjectUsage | null>(null);
 
     const { data, isLoading, error } = useQuery<QuoteProjectUsage[]>({
         queryKey: ['quote-overview'],
@@ -64,7 +65,7 @@ export default function QuoteOverviewPage() {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-slate-800">報價 / 案件用料總覽</h1>
-                            <p className="text-sm text-slate-500">顯示已確認、施工中、驗收中、已結案案件的用料狀況（進貨 / 剩料 / 退貨）。</p>
+                            <p className="text-sm text-slate-500">顯示報價中、已確認、施工中、驗收中、已結案案件的用料狀況（進貨 / 剩料 / 退貨）。</p>
                         </div>
                     </div>
                     <button
@@ -179,6 +180,13 @@ export default function QuoteOverviewPage() {
                                                         <Plus size={14} />
                                                         管理用料
                                                     </button>
+                                                    <button
+                                                        onClick={() => setImportDrawerProject(project)}
+                                                        className="flex items-center gap-2 px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-md transition-colors font-medium border border-amber-200 text-sm"
+                                                    >
+                                                        <Lightbulb size={14} className="fill-amber-400" />
+                                                        智能媒合
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -281,6 +289,13 @@ export default function QuoteOverviewPage() {
                     isOpen={!!orderSheetProject}
                     onClose={() => setOrderSheetProject(null)}
                     project={orderSheetProject}
+                />
+            )}
+            {importDrawerProject && (
+                <EstimationImportDrawer
+                    isOpen={!!importDrawerProject}
+                    onClose={() => setImportDrawerProject(null)}
+                    project={importDrawerProject}
                 />
             )}
         </>

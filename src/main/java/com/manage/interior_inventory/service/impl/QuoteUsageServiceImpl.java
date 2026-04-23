@@ -31,8 +31,9 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
     @Override
     @Transactional(readOnly = true)
     public List<QuoteUsageResponse> getQuoteUsageOverview() {
-        // 只撈出「已確認 / 施工中 / 驗收中 / 已結案」四種狀態
+        // 只撈出「報價中/已確認 / 施工中 / 驗收中 / 已結案」五種狀態
         List<Project> projects = projectRepository.findByStatusIn(List.of(
+                ProjectStatus.QUOTING,
                 ProjectStatus.CONFIRMED,
                 ProjectStatus.IN_PROGRESS,
                 ProjectStatus.INSPECTION,
