@@ -5,6 +5,7 @@ import com.manage.interior_inventory.dto.worker.CaseWorkerResponse;
 import com.manage.interior_inventory.dto.worker.WorkerProjectSummary;
 import com.manage.interior_inventory.entity.CaseWorker;
 import com.manage.interior_inventory.entity.Project;
+import com.manage.interior_inventory.entity.ProjectStatus;
 import com.manage.interior_inventory.entity.Worker;
 import com.manage.interior_inventory.repository.CaseWorkerRepository;
 import com.manage.interior_inventory.repository.ProjectRepository;
@@ -31,8 +32,14 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
         @Override
         @Transactional(readOnly = true)
         public List<WorkerProjectSummary> getWorkerOverview() {
-                // 先撈所有案件（不篩狀態）
-                List<Project> projects = projectRepository.findAll();
+                List<ProjectStatus> allowedStatuses = List.of(
+                                ProjectStatus.QUOTING,
+                                ProjectStatus.CONFIRMED,
+                                ProjectStatus.IN_PROGRESS,
+                                ProjectStatus.INSPECTION,
+                                ProjectStatus.CLOSED);
+
+                List<Project> projects = projectRepository.findByStatusIn(allowedStatuses);
 
                 return projects.stream()
                                 .map(this::toSummary)
