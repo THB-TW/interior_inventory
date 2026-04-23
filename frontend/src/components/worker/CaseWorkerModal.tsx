@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Edit2, Trash2, Plus } from 'lucide-react';
 import type { WorkerProjectSummary, CaseWorkerRow } from '@/types/worker';
-import { getWorkers } from '@/services/workerService';
+import { getWorkers, getCaseWorkers } from '@/services/workerService';
 import {
     createCaseWorker,
     updateCaseWorker,
@@ -21,6 +21,7 @@ type FormState = {
     workerId: string;
     dailyWage: string;
     workday: string;
+    workdayEnd: string;
     travelExpenses: string;
 };
 
@@ -28,6 +29,7 @@ const emptyForm: FormState = {
     workerId: '',
     dailyWage: '',
     workday: '',
+    workdayEnd: '',
     travelExpenses: '0',
 };
 
@@ -45,12 +47,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
     // 取此案件最新 case_workers（讓 modal 開啟後即時同步）
     const { data: caseWorkers, isLoading } = useQuery<CaseWorkerRow[]>({
         queryKey: ['case-workers', project.projectId],
-        queryFn: async () => {
-            // 直接用 project.workers 來源，或另打 API 皆可
-            // 這裡直接用 overview 快取裡的 workers
-            return project.workers;
-        },
-        initialData: project.workers,
+        queryFn: () => getCaseWorkers(project.projectId),
         enabled: isOpen,
     });
 
@@ -74,6 +71,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                 workerId: form.workerId ? Number(form.workerId) : null,
                 dailyWage: Number(form.dailyWage),
                 workday: form.workday,
+                workdayEnd: form.workdayEnd || undefined,
                 travelExpenses: Number(form.travelExpenses),
             }),
         onSuccess: () => {
@@ -89,6 +87,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                 workerId: form.workerId ? Number(form.workerId) : null,
                 dailyWage: Number(form.dailyWage),
                 workday: form.workday,
+                workdayEnd: form.workdayEnd || undefined,
                 travelExpenses: Number(form.travelExpenses),
             }),
         onSuccess: () => {
@@ -114,6 +113,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
             workerId: row.workerId ? String(row.workerId) : '',
             dailyWage: String(row.dailyWage),
             workday: row.workday,
+            workdayEnd: '',
             travelExpenses: String(row.travelExpenses),
         });
     };
@@ -165,7 +165,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                     <thead className="bg-slate-100 text-slate-600">
                                         <tr>
                                             <th className="px-3 py-2 text-left">工人名字</th>
-                                            <th className="px-3 py-2 text-left">施作日期</th>
+                                            <th className="px-3 py-2">工作天數</th>
                                             <th className="px-3 py-2 text-right">當天工錢</th>
                                             <th className="px-3 py-2 text-right">車馬費</th>
                                             <th className="px-3 py-2 text-right">操作</th>
@@ -175,7 +175,9 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         {caseWorkers.map((row) => (
                                             <tr key={row.id} className="border-t border-slate-200 hover:bg-slate-50">
                                                 <td className="px-3 py-2">{row.workerName || '—'}</td>
-                                                <td className="px-3 py-2">{row.workday}</td>
+                                                <td className="px-3 py-2 text-center">
+                                                    {caseWorkers.filter((r) => r.workerId === row.workerId).length} 天
+                                                </td>
                                                 <td className="px-3 py-2 text-right">
                                                     ${row.dailyWage.toLocaleString()}
                                                 </td>
@@ -233,7 +235,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                                        施作日期
+                                        施作日期（起）
                                     </label>
                                     <input
                                         type="date"
@@ -242,6 +244,22 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                                     />
                                 </div>
+
+                                {!form.id && (
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                                            施作日期（迄）
+                                            <span className="ml-1 text-slate-400 font-normal">不填則只記一天</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={form.workdayEnd}
+                                            min={form.workday || undefined}
+                                            onChange={(e) => setForm((f) => ({ ...f, workdayEnd: e.target.value }))}
+                                            className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                                        />
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 mb-1">
                                         當天工錢（元）

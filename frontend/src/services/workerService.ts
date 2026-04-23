@@ -8,6 +8,13 @@ export async function getWorkers(): Promise<Worker[]> {
   return (response.data || []) as Worker[];
 }
 
+export async function getCaseWorkers(caseId: number): Promise<CaseWorkerRow[]> {
+  const response = await apiClient.get<CaseWorkerRow[]>(
+    `${CASE_WORKER_BASE}/${caseId}/workers`,
+  );
+  return (response.data || []) as CaseWorkerRow[];
+}
+
 export async function createWorker(payload: WorkerRequest): Promise<Worker> {
   const response = await apiClient.post<Worker>(WORKER_BASE, payload);
   return response.data;
@@ -33,8 +40,8 @@ export async function getWorkerOverview(): Promise<WorkerProjectSummary[]> {
 export async function createCaseWorker(
   caseId: number,
   payload: CaseWorkerRequest,
-): Promise<CaseWorkerRow> {
-  const response = await apiClient.post<CaseWorkerRow>(
+): Promise<CaseWorkerRow[]> {          // ← 改成陣列
+  const response = await apiClient.post<CaseWorkerRow[]>(   // ← 改成陣列
     `${CASE_WORKER_BASE}/${caseId}/workers`,
     payload,
   );

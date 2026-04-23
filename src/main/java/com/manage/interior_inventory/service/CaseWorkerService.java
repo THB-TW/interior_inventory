@@ -11,7 +11,7 @@ public interface CaseWorkerService {
 
     List<CaseWorkerResponse> getCaseWorkers(Long caseId);
 
-    CaseWorkerResponse createCaseWorker(Long caseId, CaseWorkerRequest request);
+    List<CaseWorkerResponse> createCaseWorker(Long caseId, CaseWorkerRequest request);
 
     CaseWorkerResponse updateCaseWorker(Long caseWorkerId, CaseWorkerRequest request);
 

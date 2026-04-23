@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -72,21 +74,34 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
 
         @Override
         @Transactional
-        public CaseWorkerResponse createCaseWorker(Long caseId, CaseWorkerRequest request) {
+        public List<CaseWorkerResponse> createCaseWorker(Long caseId, CaseWorkerRequest request) {
                 Project project = projectRepository.findById(caseId)
                                 .orElseThrow(() -> new EntityNotFoundException("Project not found: " + caseId));
 
                 Worker worker = resolveWorker(request.workerId());
 
-                CaseWorker entity = CaseWorker.builder()
-                                .project(project)
-                                .worker(worker)
-                                .dailyWage(request.dailyWage())
-                                .workday(request.workday())
-                                .travelExpenses(request.travelExpenses())
-                                .build();
+                LocalDate start = request.workday();
+                LocalDate end = request.workdayEnd() != null ? request.workdayEnd() : start;
 
-                return CaseWorkerResponse.fromEntity(caseWorkerRepository.save(entity));
+                if (end.isBefore(start)) {
+                        throw new IllegalArgumentException("結束日期不能早於開始日期");
+                }
+
+                List<CaseWorker> entities = new ArrayList<>();
+                for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                        entities.add(CaseWorker.builder()
+                                        .project(project)
+                                        .worker(worker)
+                                        .dailyWage(request.dailyWage())
+                                        .workday(date)
+                                        .travelExpenses(request.travelExpenses())
+                                        .build());
+                }
+
+                return caseWorkerRepository.saveAll(entities)
+                                .stream()
+                                .map(CaseWorkerResponse::fromEntity)
+                                .toList();
         }
 
         @Override

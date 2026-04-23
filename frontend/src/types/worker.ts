@@ -39,5 +39,6 @@ export interface CaseWorkerRequest {
   workerId: number | null;
   dailyWage: number;
   workday: string;             // ISO date "2025-04-01"
+  workdayEnd?: string;            // ISO date "2025-04-01"
   travelExpenses: number;
 }

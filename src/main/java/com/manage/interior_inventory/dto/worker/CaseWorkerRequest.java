@@ -7,11 +7,13 @@ import java.time.LocalDate;
 
 public record CaseWorkerRequest(
 
-        Long workerId,
+                Long workerId,
 
-        @NotNull(message = "請輸入工資") @DecimalMin(value = "0", message = "請輸入正確工資") BigDecimal dailyWage,
+                @NotNull(message = "請輸入工資") @DecimalMin(value = "0", message = "請輸入正確工資") BigDecimal dailyWage,
 
-        @NotNull(message = "請選擇工期") LocalDate workday,
+                @NotNull(message = "請選擇工期") LocalDate workday,
 
-        @NotNull(message = "請輸入車馬費") @DecimalMin(value = "0", message = "請輸入正確車馬費") BigDecimal travelExpenses) {
+                LocalDate workdayEnd,
+
+                @NotNull(message = "請輸入車馬費") @DecimalMin(value = "0", message = "請輸入正確車馬費") BigDecimal travelExpenses) {
 }

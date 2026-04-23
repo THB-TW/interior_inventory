@@ -162,12 +162,6 @@ export default function WorkerOverviewPage() {
                                         ) : (
                                             <div className="flex flex-wrap gap-3">
                                                 <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs text-slate-700 flex items-center gap-1.5">
-                                                    <span className="text-slate-400">工作天數</span>
-                                                    <span className="font-semibold text-slate-800">
-                                                        {project.totalWorkdays} 天
-                                                    </span>
-                                                </div>
-                                                <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs text-slate-700 flex items-center gap-1.5">
                                                     <span className="text-slate-400">總工錢</span>
                                                     <span className="font-semibold text-slate-800">
                                                         ${project.totalWage.toLocaleString()}
@@ -217,7 +211,12 @@ export default function WorkerOverviewPage() {
                                                                     <td className="px-3 py-2">
                                                                         {w.workerName || '—'}
                                                                     </td>
-                                                                    <td className="px-3 py-2">{w.workday}</td>
+                                                                    <td className="px-3 py-2">
+                                                                        {w.workday}
+                                                                        <span className="ml-2 text-xs text-slate-400">
+                                                                            （本案 {project.workers.filter((r) => r.workerId === w.workerId).length} 天）
+                                                                        </span>
+                                                                    </td>
                                                                     <td className="px-3 py-2 text-right">
                                                                         ${w.dailyWage.toLocaleString()}
                                                                     </td>

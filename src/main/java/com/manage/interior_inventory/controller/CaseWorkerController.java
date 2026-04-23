@@ -37,8 +37,7 @@ public class CaseWorkerController {
     }
 
     @PostMapping("/{caseId}/workers")
-    @Operation(summary = "新增一筆施工紀錄", description = "在指定案件新增一筆工人施工紀錄，workerId 可為 null（未綁定名單時）")
-    public ApiResponse<CaseWorkerResponse> createCaseWorker(
+    public ApiResponse<List<CaseWorkerResponse>> createCaseWorker(
             @PathVariable Long caseId,
             @Valid @RequestBody CaseWorkerRequest request) {
         return ApiResponse.success("新增施工紀錄成功",
