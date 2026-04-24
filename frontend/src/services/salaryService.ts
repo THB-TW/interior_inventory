@@ -6,7 +6,7 @@ import type {
     SalaryItemAdjustRequest,
 } from '@/types/salary'
 
-const BASE = '/api/finance/salary'
+const BASE = '/finance/salary'
 
 export const salaryService = {
 

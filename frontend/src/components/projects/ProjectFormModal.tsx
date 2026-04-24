@@ -17,7 +17,8 @@ const schema = z.object({
   district: z.string().optional(),
   siteAddress: z.string().min(1, '詳細地址為必填'),
   salesUserId: z.number({ error: '負責業務 ID 為必填數字' }).min(1, '請輸入有效的業務 ID'),
-  estimatedDays: z.number().optional(),
+  estimatedDays: z.number().int().positive().optional().catch(undefined),
+  description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -64,6 +65,7 @@ export default function ProjectFormModal({
         siteAddress: editTarget.addressLine,
         salesUserId: editTarget.salesUserId,
         estimatedDays: editTarget.estimatedDays ?? undefined,
+        description: editTarget.description ?? '',
       });
     } else {
       reset({ salesUserId: 1 });
@@ -138,9 +140,22 @@ export default function ProjectFormModal({
               <input type="number" {...register('salesUserId', { valueAsNumber: true })} placeholder="1" className={inputClass(!!errors.salesUserId)} />
             </FormField>
             <FormField label="預計工期（天）" error={errors.estimatedDays?.message}>
-              <input type="number" {...register('estimatedDays')} placeholder="30" className={inputClass(!!errors.estimatedDays)} />
+              <input type="number" {...register('estimatedDays', { valueAsNumber: true })} placeholder="30" className={inputClass(!!errors.estimatedDays)} />
             </FormField>
           </div>
+
+          <FormField label="備註" error={errors.description?.message}>
+            <textarea
+              {...register('description')}
+              rows={3}
+              placeholder="施工注意事項、特殊需求或其他說明..."
+              className={cn(
+                'w-full rounded-md border px-3 py-2 text-sm outline-none transition resize-none',
+                'focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]',
+                errors.description ? 'border-red-400 bg-red-50' : 'border-[var(--color-border)] bg-white'
+              )}
+            />
+          </FormField>
 
           {/* 後端錯誤訊息 */}
           {mutation.isError && (

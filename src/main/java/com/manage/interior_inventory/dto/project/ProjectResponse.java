@@ -16,6 +16,7 @@ public record ProjectResponse(
         String description,
         ProjectStatus status,
         Long salesUserId,
+        Integer estimatedDays,
         LocalDateTime createdAt,
         LocalDateTime updatedAt) {
     public static ProjectResponse fromEntity(Project project) {
@@ -30,6 +31,7 @@ public record ProjectResponse(
                 project.getDescription(),
                 project.getStatus(),
                 project.getSalesUserId(),
+                project.getEstimatedDays(),
                 project.getCreatedAt(),
                 project.getUpdatedAt());
     }

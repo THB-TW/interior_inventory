@@ -17,5 +17,7 @@ public record ProjectCreateRequest(
 
                 String description,
 
-                @NotNull(message = "負責業務(Sales)為必填") Long salesUserId) {
+                @NotNull(message = "負責業務(Sales)為必填") Long salesUserId,
+
+                Integer estimatedDays) {
 }

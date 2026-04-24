@@ -1,56 +1,60 @@
-export type WageType = 'DAILY' | 'MONTHLY' | 'PROJECT_SHARE'
+export type WageType = 'DAILY' | 'PROJECT_SHARE'
 export type SalaryStatus = 'PENDING' | 'CONFIRMED' | 'PAID'
-export type PeriodType = 'MONTHLY_FIRST' | 'MONTHLY_SECOND'
 
-// ── Period ───────────────────────────────────────────────
+// ── 對映 SalaryPeriodResponse ────────────────────────
 
 export interface SalaryPeriod {
-    periodId: number
-    periodLabel: string        // e.g. "2026年4月上旬"
-    periodType: PeriodType
-    year: number
-    month: number
+    id: number
+    periodStart: string        // ISO date (LocalDate)
+    periodEnd: string
+    label: string              // e.g. "2026年4月上旬"
     status: SalaryStatus
-    workers: WorkerSalarySummary[]
-    totalAmount: number
+    totalAmount: number        // BigDecimal → number
     paidAmount: number
     unpaidAmount: number
+    createdAt: string          // ISO datetime
+    workers: WorkerSalarySummary[] | null
 }
 
-// ── Worker 彙總（一個師傅在此期的所有項目）───────────────
+// ── 對映 WorkerSalarySummary ─────────────────────────
 
 export interface WorkerSalarySummary {
     workerId: number
-    workerName: string
+    workerNickname: string
     wageType: WageType
-    items: SalaryItemDetail[]
     subtotal: number
+    paidAmount: number
+    unpaidAmount: number
     allPaid: boolean
+    items: SalaryItemDetail[] | null
 }
 
-// ── 單筆薪資項目 ─────────────────────────────────────────
+// ── 對映 SalaryItemDetail ────────────────────────────
 
 export interface SalaryItemDetail {
-    itemId: number
-    caseId?: number
-    caseName?: string
+    id: number
+    periodId: number | null
+    workerId: number
+    workerNickname: string
+    projectId: number | null
+    projectCode: string | null
     wageType: WageType
     baseAmount: number
+    travelExpenses: number
     adjustment: number
     finalAmount: number
     isPaid: boolean
-    paidAt?: string
-    note?: string
+    paidAt: string | null
+    note: string | null
+    createdAt: string
 }
 
-// ── Request ──────────────────────────────────────────────
+// ── Request ──────────────────────────────────────────
 
 export interface SalaryPeriodCreateRequest {
-    periodType: PeriodType
-    year: number
-    month: number
-    startDate?: string    // ISO date, 若 null 後端自動推算
-    endDate?: string
+    periodStart: string    // ISO date
+    periodEnd: string
+    label: string
 }
 
 export interface SalaryItemAdjustRequest {

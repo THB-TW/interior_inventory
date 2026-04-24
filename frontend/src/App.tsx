@@ -1,11 +1,13 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
+import FinanceLayout from '@/components/layout/FinanceLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import ProjectListPage from '@/pages/projects/ProjectListPage';
 import ProjectEstimationPage from '@/pages/projects/ProjectEstimationPage';
 import InventoryPage from '@/pages/inventory/InventoryPage';
 import QuoteOverviewPage from '@/pages/quotes/QuoteOverviewPage';
 import FinancePage from '@/pages/finance/FinancePage';
+import SalaryPage from '@/pages/finance/SalaryPage';
 import WorkerOverviewPage from '@/pages/workers/WorkerOverviewPage';
 import WorkerReportPage from '@/pages/workers/WorkerReportPage';
 import PlaceholderPage from '@/components/common/PlaceholderPage';
@@ -20,7 +22,16 @@ const router = createBrowserRouter([
       { path: 'projects/:id/estimate', element: <ProjectEstimationPage /> },
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'quotes', element: <QuoteOverviewPage /> },
-      { path: 'finance', element: <FinancePage /> },
+      {
+        path: 'finance',
+        element: <FinanceLayout />,
+        children: [
+          { index: true, element: <Navigate to="profit" replace /> },
+          { path: 'profit', element: <FinancePage /> },
+          { path: 'salary', element: <SalaryPage /> },
+          { path: 'invoices', element: <PlaceholderPage title="建材商對帳" /> },
+        ],
+      },
       { path: 'workers', element: <WorkerOverviewPage /> },
       { path: 'workers/:projectId/report', element: <WorkerReportPage /> },
       { path: 'clients', element: <PlaceholderPage title="客戶資料" /> },
