@@ -57,6 +57,29 @@ public class WorkerSalaryController {
         return ApiResponse.success("付款成功", salaryService.markPeriodPaid(periodId));
     }
 
+    @PatchMapping("/periods/{periodId}/refresh")
+    @Operation(summary = "重新整理期別明細", description = "依 case_workers 彙總重寫 DAILY 薪資項目，只有 PENDING 狀態可執行")
+    public ApiResponse<List<SalaryItemDetail>> refreshPeriodItems(
+            @PathVariable Long periodId) {
+        return ApiResponse.success("重新整理完成", salaryService.refreshPeriodItems(periodId));
+    }
+
+    @DeleteMapping("/periods/{periodId}")
+    @Operation(summary = "刪除薪資期別", description = "連同所有薪資明細一起刪除")
+    public ApiResponse<Void> deletePeriod(
+            @PathVariable Long periodId) {
+        salaryService.deletePeriod(periodId);
+        return ApiResponse.success("期別已刪除");
+    }
+
+    @PatchMapping("/periods/{periodId}")
+    @Operation(summary = "修改薪資期別", description = "可修改 periodStart / periodEnd / label / status")
+    public ApiResponse<SalaryPeriodResponse> updatePeriod(
+            @PathVariable Long periodId,
+            @RequestBody SalaryPeriodUpdateRequest req) {
+        return ApiResponse.success("修改成功", salaryService.updatePeriod(periodId, req));
+    }
+
     // ────────────────────────────────────────
     // Items
     // ────────────────────────────────────────

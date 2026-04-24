@@ -4,6 +4,9 @@ import com.manage.interior_inventory.dto.salary.*;
 import com.manage.interior_inventory.entity.WorkerSalaryItem;
 import com.manage.interior_inventory.entity.WorkerSalaryPeriod;
 import com.manage.interior_inventory.entity.enums.SalaryStatus;
+import com.manage.interior_inventory.repository.CaseWorkerRepository;
+import com.manage.interior_inventory.repository.ProjectRepository;
+import com.manage.interior_inventory.repository.WorkerRepository;
 import com.manage.interior_inventory.repository.WorkerSalaryItemRepository;
 import com.manage.interior_inventory.repository.WorkerSalaryPeriodRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,9 @@ public class WorkerSalaryService {
 
     private final WorkerSalaryPeriodRepository periodRepo;
     private final WorkerSalaryItemRepository itemRepo;
+    private final CaseWorkerRepository caseWorkerRepo;
+    private final WorkerRepository workerRepo;
+    private final ProjectRepository projectRepo;
 
     // ────────────────────────────────────────
     // Period CRUD
@@ -169,6 +175,85 @@ public class WorkerSalaryService {
         item.setPaidAt(LocalDateTime.now());
         itemRepo.save(item);
         return toItemDetail(item);
+    }
+
+    /** 刪除薪資期別（PAID 狀態不可刪，先刪所有 items 再刪 period） */
+    @Transactional
+    public void deletePeriod(Long periodId) {
+        WorkerSalaryPeriod period = findPeriodOrThrow(periodId);
+        List<WorkerSalaryItem> items = itemRepo.findByPeriodId(periodId);
+        itemRepo.deleteAll(items);
+        periodRepo.delete(period);
+    }
+
+    /** 修改期別資訊（期間、標籤、狀態） */
+    @Transactional
+    public SalaryPeriodResponse updatePeriod(Long periodId, SalaryPeriodUpdateRequest req) {
+        WorkerSalaryPeriod period = findPeriodOrThrow(periodId);
+        if (req.periodStart() != null) period.setPeriodStart(req.periodStart());
+        if (req.periodEnd()   != null) period.setPeriodEnd(req.periodEnd());
+        if (req.label()       != null) period.setLabel(req.label());
+        if (req.status()      != null) period.setStatus(req.status());
+        periodRepo.save(period);
+        return toPeriodResponse(period, false);
+    }
+
+    /**
+     * 重新彙總：將期別範圍內的 case_workers 寫入 / 更新 WorkerSalaryItem。
+     * 只有 PENDING 狀態可執行；已付款項目保留調整值，不在彙總結果內的 item 保留不刪。
+     */
+    @Transactional
+    public List<SalaryItemDetail> refreshPeriodItems(Long periodId) {
+        WorkerSalaryPeriod period = findPeriodOrThrow(periodId);
+
+        if (!SalaryStatus.PENDING.equals(period.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "只有 PENDING 狀態的期別可重新整理，目前狀態：" + period.getStatus());
+        }
+
+        // 彙總：[workerId, projectId, SUM(dailyWage), SUM(travelExpenses)]
+        List<Object[]> rows = caseWorkerRepo.sumByWorkerBetween(
+                period.getPeriodStart(), period.getPeriodEnd());
+
+        for (Object[] row : rows) {
+            Long workerId = ((Number) row[0]).longValue();
+            Long projectId = ((Number) row[1]).longValue();
+            BigDecimal base = (BigDecimal) row[2];
+            BigDecimal travel = (BigDecimal) row[3];
+
+            // 按 (period + worker + project + wageType) 找荷或建立
+            WorkerSalaryItem item = itemRepo
+                    .findByPeriodIdAndWorkerIdAndProjectIdAndWageType(
+                            periodId, workerId, projectId, "DAILY")
+                    .orElse(null);
+
+            if (item != null) {
+                // 更新（保留 adjustment、isPaid、note）
+                item.setBaseAmount(base);
+                item.setTravelExpenses(travel);
+                item.setFinalAmount(base.add(travel).add(item.getAdjustment()));
+                itemRepo.save(item);
+            } else {
+                // 新增
+                WorkerSalaryItem newItem = WorkerSalaryItem.builder()
+                        .period(period)
+                        .worker(workerRepo.getReferenceById(workerId))
+                        .project(projectRepo.getReferenceById(projectId))
+                        .wageType("DAILY")
+                        .baseAmount(base)
+                        .travelExpenses(travel)
+                        .adjustment(BigDecimal.ZERO)
+                        .finalAmount(base.add(travel))
+                        .isPaid(false)
+                        .build();
+                itemRepo.save(newItem);
+            }
+        }
+
+        return itemRepo.findByPeriodId(periodId).stream()
+                .map(this::toItemDetail)
+                .toList();
     }
 
     // ────────────────────────────────────────

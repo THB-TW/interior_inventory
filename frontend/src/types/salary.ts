@@ -57,6 +57,13 @@ export interface SalaryPeriodCreateRequest {
     label: string
 }
 
+export interface SalaryPeriodUpdateRequest {
+    periodStart?: string
+    periodEnd?: string
+    label?: string
+    status?: SalaryStatus
+}
+
 export interface SalaryItemAdjustRequest {
     adjustment: number
     note?: string

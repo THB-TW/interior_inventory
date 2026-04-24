@@ -3,6 +3,7 @@ import type {
     SalaryPeriod,
     SalaryItemDetail,
     SalaryPeriodCreateRequest,
+    SalaryPeriodUpdateRequest,
     SalaryItemAdjustRequest,
 } from '@/types/salary'
 
@@ -27,6 +28,9 @@ export const salaryService = {
     markPeriodPaid: (periodId: number): Promise<SalaryPeriod> =>
         apiClient.patch(`${BASE}/periods/${periodId}/pay`).then(r => r.data),
 
+    updatePeriod: (periodId: number, req: SalaryPeriodUpdateRequest): Promise<SalaryPeriod> =>
+        apiClient.patch(`${BASE}/periods/${periodId}`, req).then(r => r.data),
+
     // ── Items ────────────────────────────────────
 
     getItemsByPeriod: (periodId: number): Promise<SalaryItemDetail[]> =>
@@ -40,4 +44,10 @@ export const salaryService = {
 
     markItemPaid: (itemId: number): Promise<SalaryItemDetail> =>
         apiClient.patch(`${BASE}/items/${itemId}/pay`).then(r => r.data),
+
+    refreshPeriodItems: (periodId: number): Promise<SalaryItemDetail[]> =>
+        apiClient.patch(`${BASE}/periods/${periodId}/refresh`).then(r => r.data),
+
+    deletePeriod: (periodId: number): Promise<void> =>
+        apiClient.delete(`${BASE}/periods/${periodId}`).then(() => undefined),
 }

@@ -6,6 +6,7 @@ import StatusBadge from '@/components/common/StatusBadge';
 import Pagination from '@/components/common/Pagination';
 import SalaryPeriodDrawer from '@/components/finance/SalaryPeriodDrawer';
 import SalaryCreateModal from '@/components/finance/SalaryCreateModal';
+import SalaryPeriodEditModal from '@/components/finance/SalaryPeriodEditModal';
 import {
   Loader2,
   Wallet,
@@ -13,6 +14,8 @@ import {
   CheckCircle2,
   Banknote,
   CalendarRange,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 
@@ -28,6 +31,8 @@ export default function SalaryPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState<SalaryPeriod | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [editPeriod, setEditPeriod] = useState<SalaryPeriod | null>(null);
 
   // ── 查詢所有期別 ──
   const { data: periods, isLoading, error } = useQuery<SalaryPeriod[]>({
@@ -48,6 +53,19 @@ export default function SalaryPage() {
     mutationFn: (periodId: number) => salaryService.markPeriodPaid(periodId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-periods'] });
+    },
+  });
+
+  // ── 刪除期別 ──
+  const deleteMutation = useMutation({
+    mutationFn: (periodId: number) => salaryService.deletePeriod(periodId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-periods'] });
+      setConfirmDeleteId(null);
+      // 若刪除的是目前開着的期別，就關閉 Drawer
+      if (selectedPeriod && deleteMutation.variables === selectedPeriod.id) {
+        setSelectedPeriod(null);
+      }
     },
   });
 
@@ -186,6 +204,33 @@ export default function SalaryPage() {
                           {period.status === 'PAID' && (
                             <span className="text-xs text-slate-400">已結清</span>
                           )}
+                          {/* 刪除按鈕（所有狀態都可刪） */}
+                          {confirmDeleteId === period.id ? (
+                            <button
+                              onClick={() => deleteMutation.mutate(period.id)}
+                              disabled={deleteMutation.isPending}
+                              className="px-2.5 py-1 text-xs font-medium bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50"
+                            >
+                              {deleteMutation.isPending ? '刪除中...' : '確定刪除'}
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setEditPeriod(period)}
+                                title="編輯期別"
+                                className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(period.id)}
+                                title="刪除期別"
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -225,6 +270,15 @@ export default function SalaryPage() {
             queryClient.invalidateQueries({ queryKey: ['salary-periods'] });
             setShowCreate(false);
           }}
+        />
+      )}
+
+      {/* ── 編輯期別 Modal ── */}
+      {editPeriod && (
+        <SalaryPeriodEditModal
+          period={editPeriod}
+          onClose={() => setEditPeriod(null)}
+          onUpdated={() => setEditPeriod(null)}
         />
       )}
     </>

@@ -12,6 +12,7 @@ import {
   Banknote,
   User,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 
@@ -60,6 +61,16 @@ export default function SalaryPeriodDrawer({ periodId, onClose, onUpdated }: Pro
   // ── 全部付款 ──
   const payAllMutation = useMutation({
     mutationFn: () => salaryService.markPeriodPaid(periodId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-period', periodId] });
+      queryClient.invalidateQueries({ queryKey: ['salary-period-items', periodId] });
+      queryClient.invalidateQueries({ queryKey: ['salary-periods'] });
+    },
+  });
+
+  // ── 重新整理 ──
+  const refreshMutation = useMutation({
+    mutationFn: () => salaryService.refreshPeriodItems(periodId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-period', periodId] });
       queryClient.invalidateQueries({ queryKey: ['salary-period-items', periodId] });
@@ -306,6 +317,19 @@ export default function SalaryPeriodDrawer({ periodId, onClose, onUpdated }: Pro
                 >
                   關閉
                 </button>
+                {period?.status === 'PENDING' && (
+                  <button
+                    onClick={() => refreshMutation.mutate()}
+                    disabled={refreshMutation.isPending}
+                    title="依 case_workers 重新彙總薪資項目"
+                    className="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 border border-slate-200"
+                  >
+                    {refreshMutation.isPending
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : <RefreshCw size={14} />}
+                    重新整理
+                  </button>
+                )}
                 {period?.status === 'PENDING' && (
                   <button
                     onClick={() => confirmMutation.mutate()}
