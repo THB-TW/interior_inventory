@@ -88,6 +88,9 @@ export default function ProjectTable({
               狀態
             </th>
             <th className="text-left px-4 py-3 font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
+              預計天數
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
               建立日期
             </th>
             <th className="text-right px-4 py-3 font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
@@ -117,6 +120,11 @@ export default function ProjectTable({
               </td>
               <td className="px-4 py-3">
                 <StatusBadge status={project.status} />
+              </td>
+              <td className="px-4 py-3 text-[var(--color-text-secondary)] whitespace-nowrap">
+                {project.estimatedDays != null
+                  ? `${project.estimatedDays} 天`
+                  : <span className="text-[var(--color-text-muted)] text-xs">未填寫</span>}
               </td>
               <td className="px-4 py-3 text-[var(--color-text-secondary)] whitespace-nowrap">
                 {new Date(project.createdAt).toLocaleDateString('zh-TW')}

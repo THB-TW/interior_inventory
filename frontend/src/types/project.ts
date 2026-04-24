@@ -119,6 +119,7 @@ export interface CreateProjectRequest {
   city: string;
   district?: string;
   siteAddress: string;
+  description?: string;
   salesUserId: number;
   estimatedDays?: number;
 }

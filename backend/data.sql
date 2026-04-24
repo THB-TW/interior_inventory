@@ -455,17 +455,24 @@ VALUES
    15400.00, FALSE);
 
 -- === 預設師傅名單 ===
-INSERT INTO workers (nickname, daily_wage) VALUES ('阿信師', 3000);
-INSERT INTO workers (nickname, daily_wage) VALUES ('木工老張', 3500);
-INSERT INTO workers (nickname, daily_wage) VALUES ('水電阿吉', 2800);
-INSERT INTO workers (nickname, daily_wage) VALUES ('文全', 2950);
-INSERT INTO workers (nickname, daily_wage) VALUES ('小量', 3350);
-INSERT INTO workers (nickname, daily_wage) VALUES ('阿葉', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('芋頭', 3450);
-INSERT INTO workers (nickname, daily_wage) VALUES ('浩威', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('煥明', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('換騎', 3550);
-INSERT INTO workers (nickname, daily_wage) VALUES ('陳敏', 2150);
+INSERT INTO workers (nickname, daily_wage, wage_type, share_rate) VALUES
+  -- 日薪制（原有 11 位）
+  ('阿信師',    3000, 'DAILY',         NULL),
+  ('木工老張',  3500, 'DAILY',         NULL),
+  ('水電阿吉',  2800, 'DAILY',         NULL),
+  ('文全',      2950, 'DAILY',         NULL),
+  ('小量',      3350, 'DAILY',         NULL),
+  ('阿葉',      3550, 'DAILY',         NULL),
+  ('芋頭',      3450, 'DAILY',         NULL),
+  ('浩威',      3550, 'DAILY',         NULL),
+  ('煥明',      3550, 'DAILY',         NULL),
+  ('換騎',      3550, 'DAILY',         NULL),
+  ('陳敏',      2150, 'DAILY',         NULL),
+  -- 專案分潤制（新增 4 位，daily_wage=0 因為不按日計薪）
+  ('老林設計師', 0,   'PROJECT_SHARE', 0.0800),  -- 抽合約金額 8%
+  ('阿國統包',   0,   'PROJECT_SHARE', 0.1200),  -- 抽合約金額 12%
+  ('小陳監工',   0,   'PROJECT_SHARE', 0.0600),  -- 抽合約金額 6%
+  ('大志師傅',   0,   'PROJECT_SHARE', 0.1000);  -- 抽合約金額 10%
 
 -- ============================================================
 -- case_workers 測試資料
@@ -856,7 +863,6 @@ INSERT INTO case_workers (case_id, worker_id, daily_wage, workday, travel_expens
 (21, 11, 2150, '2026-04-21', 250, 0.5),
 (21, 2, 3500, '2026-04-22', 250, 1.0),
 (21, 11, 2150, '2026-04-22', 250, 0.5);
-
 
 
 -- === 測試用案件估價單 ===

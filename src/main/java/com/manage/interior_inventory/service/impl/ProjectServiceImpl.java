@@ -59,6 +59,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .siteAddress(request.siteAddress())
                 .description(request.description())
                 .salesUserId(request.salesUserId())
+                .estimatedDays(request.estimatedDays())
                 .status(ProjectStatus.INQUIRY) // 初始狀態
                 .orderBatch(1)
                 .build();
@@ -116,6 +117,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setSiteAddress(request.siteAddress());
         project.setDescription(request.description());
         project.setSalesUserId(request.salesUserId());
+        project.setEstimatedDays(request.estimatedDays());
 
         Project updatedProject = projectRepository.save(project);
         return ProjectResponse.fromEntity(updatedProject);

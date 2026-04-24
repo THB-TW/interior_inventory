@@ -2,7 +2,9 @@ DROP TABLE IF EXISTS estimation_worker_items;
 DROP TABLE IF EXISTS estimation_items;
 DROP TABLE IF EXISTS project_estimations;
 DROP TABLE IF EXISTS case_workers;
+DROP TABLE IF EXISTS worker_salary_items;
 DROP TABLE IF EXISTS workers;
+DROP TABLE IF EXISTS worker_salary_periods;
 DROP TABLE IF EXISTS supplier_invoice_items;
 DROP TABLE IF EXISTS supplier_invoices;
 DROP TABLE IF EXISTS case_materials;
@@ -68,6 +70,9 @@ CREATE TABLE projects (
    sales_user_id  BIGINT       NOT NULL,
    order_batch		INTEGER NOT NULL DEFAULT 1,
    estimated_days INTEGER,
+   contract_amount	NUMERIC(10,2),
+   received_amount NUMERIC(10,2) DEFAULT 0,
+	payment_status  VARCHAR(20)   DEFAULT 'PENDING',
    created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
    updated_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
    CONSTRAINT fk_cases_sales_user
@@ -161,7 +166,9 @@ CREATE INDEX idx_supplier_items_material
 CREATE TABLE workers (
     id          BIGSERIAL PRIMARY KEY,
     nickname    VARCHAR(50) NOT NULL,
-    daily_wage  INTEGER NOT NULL
+    daily_wage  INTEGER NOT NULL,
+    wage_type   VARCHAR(20)  NOT NULL DEFAULT 'DAILY',
+    share_rate  NUMERIC(5,4)
 );
 
 CREATE TABLE case_workers (
@@ -170,8 +177,41 @@ CREATE TABLE case_workers (
     worker_id       BIGINT REFERENCES workers(id) ON DELETE CASCADE,
     daily_wage      NUMERIC(10,2) NOT NULL DEFAULT 0,
     workday         DATE NOT NULL,
-    travel_expenses NUMERIC(10,2) NOT NULL DEFAULT 0
+    travel_expenses NUMERIC(10,2) NOT NULL DEFAULT 0,
+    days_worked     NUMERIC(3,1)  NOT NULL DEFAULT 1.0,
+    CONSTRAINT chk_days_worked_positive CHECK (days_worked > 0)
 );
+
+CREATE TABLE worker_salary_periods (
+    id           BIGSERIAL    PRIMARY KEY,
+    period_start DATE         NOT NULL,
+    period_end   DATE         NOT NULL,
+    label        VARCHAR(50)  NOT NULL,
+    status       VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
+    created_at   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_salary_period UNIQUE (period_start, period_end)
+);
+
+CREATE TABLE worker_salary_items (
+    id              BIGSERIAL     PRIMARY KEY,
+    period_id       BIGINT        REFERENCES worker_salary_periods(id),  -- 分潤可 NULL
+    worker_id       BIGINT        NOT NULL REFERENCES workers(id),
+    project_id      BIGINT        REFERENCES projects(id),
+    wage_type       VARCHAR(20)   NOT NULL,
+    base_amount     NUMERIC(10,2) NOT NULL,
+    travel_expenses NUMERIC(10,2) NOT NULL DEFAULT 0,
+    adjustment      NUMERIC(10,2) NOT NULL DEFAULT 0,
+    final_amount    NUMERIC(10,2) NOT NULL,
+    is_paid         BOOLEAN       NOT NULL DEFAULT FALSE,
+    paid_at         TIMESTAMP,
+    note            TEXT,
+    created_at      TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX uq_project_share
+  ON worker_salary_items (project_id, worker_id, wage_type)
+  WHERE wage_type = 'PROJECT_SHARE';
+CREATE INDEX idx_salary_items_period ON worker_salary_items(period_id);
+CREATE INDEX idx_salary_items_worker ON worker_salary_items(worker_id);
 
 -- === 案件估價主檔 ===
 CREATE TABLE project_estimations (

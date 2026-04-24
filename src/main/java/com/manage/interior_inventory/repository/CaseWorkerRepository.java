@@ -2,8 +2,11 @@ package com.manage.interior_inventory.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import com.manage.interior_inventory.entity.CaseWorker;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface CaseWorkerRepository extends JpaRepository<CaseWorker, Long> {
@@ -16,4 +19,21 @@ public interface CaseWorkerRepository extends JpaRepository<CaseWorker, Long> {
      */
     @EntityGraph(attributePaths = { "project", "worker" })
     List<CaseWorker> findByProjectIdOrderByWorkdayAsc(Long projectId);
+
+    /**
+     * 依日期區間彙總每位師傅每個案子的薪資：
+     * [0] workerId, [1] projectId, [2] SUM(dailyWage), [3] SUM(travelExpenses)
+     */
+    @Query("""
+            SELECT c.worker.id,
+                   c.project.id,
+                   SUM(c.dailyWage),
+                   SUM(c.travelExpenses)
+            FROM CaseWorker c
+            WHERE c.workday BETWEEN :start AND :end
+            GROUP BY c.worker.id, c.project.id
+            """)
+    List<Object[]> sumByWorkerBetween(
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
 }
