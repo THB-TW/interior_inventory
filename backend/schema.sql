@@ -130,10 +130,15 @@ CREATE INDEX idx_case_materials_material ON case_materials (material_id);
 -- === 建材商對帳單 header ===
 CREATE TABLE supplier_invoices (
     id             BIGSERIAL PRIMARY KEY,
+    project_id     BIGINT       NOT NULL,
     supplier_name  VARCHAR(100) NOT NULL,
     invoice_number VARCHAR(50)  NOT NULL,
     invoice_date   DATE         NOT NULL,
     total_amount   NUMERIC(10,2),
+    status         VARCHAR(30)  NOT NULL,
+    uploaded_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+    confirmed_at   TIMESTAMP,
+    pdf_path       VARCHAR(255),
     created_at     TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
@@ -144,17 +149,17 @@ CREATE UNIQUE INDEX uidx_supplier_invoice
 CREATE TABLE supplier_invoice_items (
     id                  BIGSERIAL PRIMARY KEY,
     supplier_invoice_id BIGINT       NOT NULL,
-    material_id         BIGINT,
-    description         VARCHAR(255) NOT NULL,
-    shipped_quantity    INTEGER      NOT NULL,
-    billed_quantity     INTEGER,
+    material_name       VARCHAR(100) NOT NULL,
+    specification       VARCHAR(100),
+    unit                VARCHAR(20)  NOT NULL,
+    quantity            NUMERIC(10,2),
     unit_price          NUMERIC(10,2) NOT NULL,
-    line_amount         NUMERIC(10,2),
+    total_price         NUMERIC(10,2),
     is_return           BOOLEAN      NOT NULL DEFAULT FALSE,
+    match_status        VARCHAR(30)  NOT NULL,
+    case_material_id    BIGINT,
     CONSTRAINT fk_items_invoice
-        FOREIGN KEY (supplier_invoice_id) REFERENCES supplier_invoices (id),
-    CONSTRAINT fk_items_material
-        FOREIGN KEY (material_id) REFERENCES materials (id)
+        FOREIGN KEY (supplier_invoice_id) REFERENCES supplier_invoices (id)
 );
 
 CREATE INDEX idx_supplier_items_invoice
