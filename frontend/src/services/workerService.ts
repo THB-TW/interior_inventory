@@ -2,6 +2,7 @@ import type { Worker, WorkerRequest, WorkerProjectSummary, CaseWorkerRow, CaseWo
 import apiClient from '@/lib/apiClient';
 
 const WORKER_BASE = '/workers';
+const CASE_WORKER_BASE = '/caseworkers';
 
 export async function getWorkers(): Promise<Worker[]> {
   const response = await apiClient.get<Worker[]>(WORKER_BASE);
@@ -30,7 +31,6 @@ export async function deleteWorker(id: number): Promise<void> {
 }
 
 // ── 新增：case_workers 施工紀錄 ───────────────────────────────
-const CASE_WORKER_BASE = '/caseworkers';
 
 export async function getWorkerOverview(): Promise<WorkerProjectSummary[]> {
   const response = await apiClient.get<WorkerProjectSummary[]>(CASE_WORKER_BASE);

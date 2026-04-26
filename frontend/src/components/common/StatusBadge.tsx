@@ -30,6 +30,15 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
     // --- 薪資專用狀態 (SalaryStatus) ---
     PENDING: { label: '待確認', className: 'bg-yellow-100 text-yellow-700 border border-yellow-200' },
     PAID: { label: '已結清', className: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+
+    // --- 對帳單 invoice status ---
+    PENDING_REVIEW: { label: '待確認', className: 'bg-amber-100 text-amber-700 border border-amber-200' },
+
+    // --- 對帳單比對結果 ---
+    OK: { label: '吻合', className: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+    QTY_MISMATCH: { label: '數量異常', className: 'bg-red-100 text-red-700 border border-red-200' },
+    PRICE_MISMATCH: { label: '單價異常', className: 'bg-red-100 text-red-700 border border-red-200' },
+    NOT_FOUND: { label: '未登錄', className: 'bg-yellow-100 text-yellow-700 border border-yellow-200' },
   };
 
   // 如果傳入的狀態找不到對應，就直接顯示該文字並套用預設樣式

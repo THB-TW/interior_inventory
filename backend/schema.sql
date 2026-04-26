@@ -165,7 +165,7 @@ CREATE TABLE supplier_invoice_items (
 CREATE INDEX idx_supplier_items_invoice
     ON supplier_invoice_items (supplier_invoice_id);
 CREATE INDEX idx_supplier_items_material
-    ON supplier_invoice_items (material_id);
+    ON supplier_invoice_items (case_material_id);
 
 -- === 師傅名單 ===
 CREATE TABLE workers (
