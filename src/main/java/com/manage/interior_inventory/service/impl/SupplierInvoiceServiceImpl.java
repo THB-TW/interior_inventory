@@ -2,6 +2,7 @@ package com.manage.interior_inventory.service.impl;
 
 import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse;
 import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse.*;
+import com.manage.interior_inventory.dto.finance.invoice.UpdateInvoiceAmountRequest;
 import com.manage.interior_inventory.entity.*;
 import com.manage.interior_inventory.entity.enums.InvoiceItemMatchStatus;
 import com.manage.interior_inventory.repository.*;
@@ -53,6 +54,16 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
         // 0. 若此案件已有對帳單，先刪舊的（一案只保一筆）
         List<SupplierInvoice> existing = invoiceRepository.findByProject_IdOrderByCreatedAtDesc(projectId);
         if (!existing.isEmpty()) {
+            for (SupplierInvoice oldInvoice : existing) {
+                if (oldInvoice.getPdfPath() != null) {
+                    try {
+                        Files.deleteIfExists(Paths.get(oldInvoice.getPdfPath()));
+                        log.info("[SupplierInvoice] 已刪除舊的 PDF 檔案: {}", oldInvoice.getPdfPath());
+                    } catch (IOException e) {
+                        log.warn("[SupplierInvoice] 無法刪除舊的 PDF 檔案: {}", oldInvoice.getPdfPath(), e);
+                    }
+                }
+            }
             invoiceRepository.deleteAll(existing);
             invoiceRepository.flush();
         }
@@ -342,5 +353,16 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                 .replaceAll("[　\\s]+", "")
                 .replace("*", "×")
                 .toLowerCase();
+    }
+
+    @Transactional
+    public SupplierInvoiceUploadResponse updateAmounts(Long invoiceId, UpdateInvoiceAmountRequest req) {
+        SupplierInvoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "對帳單不存在"));
+        invoice.setReceivableAmount(req.receivableAmount());
+        invoice.setCashDiscount(req.cashDiscount());
+        invoice.setNetPayable(req.netPayable());
+        invoiceRepository.save(invoice);
+        return getDetail(invoiceId);
     }
 }

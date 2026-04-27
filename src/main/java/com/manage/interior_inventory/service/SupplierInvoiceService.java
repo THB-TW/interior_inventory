@@ -1,6 +1,8 @@
 package com.manage.interior_inventory.service;
 
 import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse;
+import com.manage.interior_inventory.dto.finance.invoice.UpdateInvoiceAmountRequest;
+
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
@@ -14,4 +16,6 @@ public interface SupplierInvoiceService {
 
     /** 查詢某案件的所有對帳單摘要列表 */
     List<SupplierInvoiceUploadResponse> listByProject(Long projectId);
+
+    SupplierInvoiceUploadResponse updateAmounts(Long invoiceId, UpdateInvoiceAmountRequest req);
 }

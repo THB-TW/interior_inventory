@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Upload, RefreshCw, AlertCircle, FileText, Package, RotateCcw } from 'lucide-react'
+import { Upload, RefreshCw, AlertCircle, FileText, Package, RotateCcw, Pencil, Check, X } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { supplierInvoiceService } from '@/services/supplierInvoiceService'
@@ -38,6 +38,13 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
     const fileRef = useRef<HTMLInputElement>(null)
     const [filter, setFilter] = useState<FilterStatus>('ALL')
 
+    const [isEditingAmount, setIsEditingAmount] = useState(false)
+    const [amountForm, setAmountForm] = useState({
+        receivableAmount: 0,
+        cashDiscount: 0,
+        netPayable: 0,
+    })
+
     const { data: invoices = [], isLoading } = useQuery<SupplierInvoiceResponse[]>({
         queryKey: ['supplier-invoices', projectId],
         queryFn: () => supplierInvoiceService.listByProject(projectId),
@@ -73,6 +80,29 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
             setFilter('ALL')
         },
     })
+
+    const updateAmountMutation = useMutation({
+        mutationFn: (data: { receivableAmount: number; cashDiscount: number; netPayable: number }) =>
+            supplierInvoiceService.updateAmounts(invoice!.invoiceId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['supplier-invoices', projectId] })
+            setIsEditingAmount(false)
+        },
+    })
+
+    const handleEditAmount = () => {
+        if (!invoice) return
+        setAmountForm({
+            receivableAmount: invoice.receivableAmount ?? 0,
+            cashDiscount: invoice.cashDiscount ?? 0,
+            netPayable: invoice.netPayable ?? 0,
+        })
+        setIsEditingAmount(true)
+    }
+
+    const handleSaveAmount = () => {
+        updateAmountMutation.mutate(amountForm)
+    }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -151,36 +181,116 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                 <div className="flex flex-col gap-5">
 
                     {/* 金額摘要列 */}
-                    <div className="flex flex-wrap items-center gap-6 px-5 py-4 bg-slate-50 rounded-xl border border-slate-200 text-sm">
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-slate-400">應收總額</span>
-                            <span className="font-mono font-semibold text-slate-800">
-                                ${invoice.receivableAmount?.toLocaleString() ?? '—'}
-                            </span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-slate-400">現金折扣</span>
-                            <span className="font-mono font-semibold text-emerald-600">
-                                -{invoice.cashDiscount?.toLocaleString() ?? '0'}
-                            </span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-slate-400">付現應收</span>
-                            <span className="font-mono font-bold text-slate-900 text-base">
-                                ${invoice.netPayable?.toLocaleString() ?? '—'}
-                            </span>
-                        </div>
-                        {invoice.deliveryAddress && (
-                            <div className="flex flex-col gap-0.5 ml-auto">
-                                <span className="text-xs text-slate-400">送貨地點</span>
-                                <span className="text-slate-600 text-xs">{invoice.deliveryAddress}</span>
-                            </div>
-                        )}
-                        {alertCount > 0 && (
-                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-red-100 text-red-700 border border-red-200 ml-auto">
-                                <AlertCircle size={11} />
-                                {alertCount} 筆異常
-                            </div>
+                    <div className="flex flex-wrap items-center gap-6 px-5 py-4 bg-slate-50 rounded-xl border border-slate-200 text-sm relative">
+                        {!isEditingAmount ? (
+                            <>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs text-slate-400">應收總額</span>
+                                    <span className="font-mono font-semibold text-slate-800">
+                                        ${invoice.receivableAmount?.toLocaleString() ?? '—'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs text-slate-400">現金折扣</span>
+                                    <span className="font-mono font-semibold text-emerald-600">
+                                        -{invoice.cashDiscount?.toLocaleString() ?? '0'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs text-slate-400">付現應收</span>
+                                    <span className="font-mono font-bold text-slate-900 text-base">
+                                        ${invoice.netPayable?.toLocaleString() ?? '—'}
+                                    </span>
+                                </div>
+
+                                <div className="ml-auto flex items-center gap-3">
+                                    <button
+                                        onClick={handleEditAmount}
+                                        className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-slate-200 transition-colors"
+                                        title="編輯金額"
+                                    >
+                                        <Pencil size={15} />
+                                    </button>
+                                    {invoice.deliveryAddress && (
+                                        <div className="flex flex-col gap-0.5 border-l border-slate-200 pl-3">
+                                            <span className="text-xs text-slate-400">送貨地點</span>
+                                            <span className="text-slate-600 text-xs">{invoice.deliveryAddress}</span>
+                                        </div>
+                                    )}
+                                    {alertCount > 0 && (
+                                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-red-100 text-red-700 border border-red-200 ml-1">
+                                            <AlertCircle size={11} />
+                                            {alertCount} 筆異常
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-slate-400">應收總額</span>
+                                    <input
+                                        type="number"
+                                        value={amountForm.receivableAmount}
+                                        onChange={e => {
+                                            const val = Number(e.target.value)
+                                            setAmountForm(prev => ({
+                                                ...prev,
+                                                receivableAmount: val,
+                                                netPayable: val - prev.cashDiscount
+                                            }))
+                                        }}
+                                        className="w-24 px-2 py-1 text-sm border border-slate-300 rounded-md outline-none focus:border-blue-500 font-mono"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-slate-400">現金折扣</span>
+                                    <input
+                                        type="number"
+                                        value={amountForm.cashDiscount}
+                                        onChange={e => {
+                                            const val = Number(e.target.value)
+                                            setAmountForm(prev => ({
+                                                ...prev,
+                                                cashDiscount: val,
+                                                netPayable: prev.receivableAmount - val
+                                            }))
+                                        }}
+                                        className="w-24 px-2 py-1 text-sm border border-slate-300 rounded-md outline-none focus:border-blue-500 font-mono"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-slate-400">付現應收</span>
+                                    <input
+                                        type="number"
+                                        value={amountForm.netPayable}
+                                        onChange={e => setAmountForm(prev => ({ ...prev, netPayable: Number(e.target.value) }))}
+                                        className="w-24 px-2 py-1 text-sm border border-slate-300 rounded-md outline-none focus:border-blue-500 font-mono font-bold"
+                                    />
+                                </div>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <button
+                                        onClick={() => setIsEditingAmount(false)}
+                                        disabled={updateAmountMutation.isPending}
+                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors disabled:opacity-50"
+                                    >
+                                        <X size={14} />
+                                        取消
+                                    </button>
+                                    <button
+                                        onClick={handleSaveAmount}
+                                        disabled={updateAmountMutation.isPending}
+                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-[var(--color-primary)] rounded-md hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
+                                    >
+                                        {updateAmountMutation.isPending ? (
+                                            <RefreshCw size={14} className="animate-spin" />
+                                        ) : (
+                                            <Check size={14} />
+                                        )}
+                                        儲存
+                                    </button>
+                                </div>
+                            </>
                         )}
                     </div>
 

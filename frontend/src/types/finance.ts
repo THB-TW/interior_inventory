@@ -21,7 +21,9 @@ export type InvoiceItemMatchStatus =
     | 'NOT_FOUND_IN_SYS'   // PDF 有，系統無此材料
     | 'NOT_FOUND_IN_PDF'   // PDF 無，系統有此材料（虛擬補充行）
     | 'QTY_MISMATCH'       // 數量不對
-    | 'PRICE_MISMATCH';    // 單價不對
+    | 'PRICE_MISMATCH'    // 單價不對
+    | 'BATCH_NOT_FOUND_IN_SYS'  // 批次未叫貨
+    | 'RETURNED';          // 退貨
 
 // ── 明細單筆 ──────────────────────────────────────────────────────
 export interface InvoiceItemDto {
@@ -58,4 +60,10 @@ export interface SupplierInvoiceResponse {
     priceMismatchCount: number;
     batchNotFoundCount: number;
     returnedCount: number;
+}
+
+export interface UpdateInvoiceAmountRequest {
+    receivableAmount: number
+    cashDiscount: number
+    netPayable: number
 }

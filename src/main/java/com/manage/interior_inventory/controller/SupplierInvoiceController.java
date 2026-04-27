@@ -2,9 +2,11 @@ package com.manage.interior_inventory.controller;
 
 import com.manage.interior_inventory.common.ApiResponse;
 import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse;
+import com.manage.interior_inventory.dto.finance.invoice.UpdateInvoiceAmountRequest;
 import com.manage.interior_inventory.service.SupplierInvoiceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,6 +54,18 @@ public class SupplierInvoiceController {
     public ApiResponse<List<SupplierInvoiceUploadResponse>> listByProject(
             @PathVariable Long projectId) {
         return ApiResponse.success("查詢成功", invoiceService.listByProject(projectId));
+    }
+
+    /**
+     * 人工修正對帳單金額
+     * PATCH /api/finance/supplier-invoices/{invoiceId}/amounts
+     */
+    @PatchMapping("/{invoiceId}/amounts")
+    @Operation(summary = "人工修正對帳單金額（應收/扣款/付現）")
+    public ApiResponse<SupplierInvoiceUploadResponse> updateAmounts(
+            @PathVariable Long invoiceId,
+            @Valid @RequestBody UpdateInvoiceAmountRequest request) {
+        return ApiResponse.success("更新成功", invoiceService.updateAmounts(invoiceId, request));
     }
 
 }

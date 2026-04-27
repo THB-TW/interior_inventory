@@ -1,5 +1,5 @@
 import apiClient from '@/lib/apiClient'
-import type { SupplierInvoiceResponse } from '@/types/finance'
+import type { SupplierInvoiceResponse, UpdateInvoiceAmountRequest } from '@/types/finance'
 
 const BASE = '/finance/supplier-invoices'
 
@@ -34,4 +34,16 @@ export const supplierInvoiceService = {
      */
     listByProject: (projectId: number): Promise<SupplierInvoiceResponse[]> =>
         apiClient.get(`${BASE}/project/${projectId}`).then(r => r.data),
+
+    /** PATCH /api/finance/supplier-invoices/{invoiceId}/amounts
+     *  人工修正應收總額、現金扣款、付現應收
+     */
+    updateAmounts: (
+        invoiceId: number,
+        data: UpdateInvoiceAmountRequest
+    ): Promise<SupplierInvoiceResponse> =>
+        apiClient
+            .patch(`${BASE}/${invoiceId}/amounts`, data)
+            .then(r => r.data),
+
 }
