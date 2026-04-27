@@ -15,58 +15,45 @@ export interface ProjectProfitDTO {
 
 export type PaymentStatus = 'PENDING' | 'PARTIAL' | 'COMPLETED';
 
-export type InvoiceStatus = 'PENDING_REVIEW' | 'CONFIRMED';
+// ── 對帳單比對狀態 ────────────────────────────────────────────────
+export type InvoiceItemMatchStatus =
+    | 'OK'
+    | 'NOT_FOUND_IN_SYS'   // PDF 有，系統無此材料
+    | 'NOT_FOUND_IN_PDF'   // PDF 無，系統有此材料（虛擬補充行）
+    | 'QTY_MISMATCH'       // 數量不對
+    | 'PRICE_MISMATCH';    // 單價不對
 
-export type InvoiceItemMatchStatus = 'OK' | 'QTY_MISMATCH' | 'PRICE_MISMATCH' | 'NOT_FOUND';
-
-export interface SupplierInvoiceItem {
-    id: number;
-    materialName: string;
-    specification: string | null;
+// ── 明細單筆 ──────────────────────────────────────────────────────
+export interface InvoiceItemDto {
+    itemId: number;
+    materialNameRaw: string;       // PDF 原始材料名稱
     unit: string;
-    quantity: number | null;
-    unitPrice: number;
+    quantity: number | null;       // NOT_FOUND_IN_PDF 為 0
+    unitPrice: number | null;
     totalPrice: number | null;
-    isReturn: boolean;
+    materialId: number | null;     // 比對不到時為 null
     matchStatus: InvoiceItemMatchStatus;
-    caseMaterialId: number | null;
 }
 
-export interface SupplierInvoice {
-    id: number;
-    projectId: number;
-    supplierName: string;
-    invoiceNumber: string;
-    invoiceDate: string;
-    totalAmount: number | null;
-    status: InvoiceStatus;
-    uploadedAt: string;
-    confirmedAt: string | null;
-    pdfPath: string | null;
-    items: SupplierInvoiceItem[];
+// ── 批次分組 ──────────────────────────────────────────────────────
+export interface BatchGroup {
+    batchNo: number;               // 0=退貨, 1~N=第幾批進貨, -1=NOT_FOUND_IN_PDF虛擬行
+    deliveryDate: string | null;   // ISO date "2026-02-09"
+    items: InvoiceItemDto[];
 }
 
-export interface InvoiceCompareItem {
-    materialName: string;
-    specification: string | null;
-    unit: string;
-    invoiceQty: number | null;
-    invoiceUnitPrice: number;
-    invoiceTotalPrice: number | null;
-    systemQty: number | null;
-    systemUnitPrice: number | null;
-    matchStatus: InvoiceItemMatchStatus;
-    caseMaterialId: number | null;
-}
-
-export interface InvoiceCompareResult {
-    tempInvoiceId: number;
-    supplierName: string;
-    invoiceNumber: string;
-    invoiceDate: string;
-    totalAmount: number | null;
-    items: InvoiceCompareItem[];
+// ── 上傳/查詢對帳單的完整 Response ───────────────────────────────
+export interface SupplierInvoiceResponse {
+    invoiceId: number;
+    deliveryAddress: string | null;  // 送貨地點（核對案件地址用）
+    receivableAmount: number | null; // 應收總額
+    cashDiscount: number | null;     // 現金扣款
+    netPayable: number | null;       // 付現應收
+    batches: BatchGroup[];           // 依批次分組的明細
+    // 比對統計
     okCount: number;
-    mismatchCount: number;
-    notFoundCount: number;
+    notFoundInSysCount: number;
+    notFoundInPdfCount: number;
+    qtyMismatchCount: number;
+    priceMismatchCount: number;
 }

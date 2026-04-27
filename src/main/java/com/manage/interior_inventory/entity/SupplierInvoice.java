@@ -1,11 +1,8 @@
 package com.manage.interior_inventory.entity;
 
-import com.manage.interior_inventory.entity.enums.InvoiceStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,31 +24,24 @@ public class SupplierInvoice {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @Column(name = "supplier_name", nullable = false, length = 100)
-    private String supplierName;
-
-    @Column(name = "invoice_number", nullable = false, length = 50)
-    private String invoiceNumber;
-
-    @Column(name = "invoice_date", nullable = false)
-    private LocalDate invoiceDate;
-
-    @Column(name = "total_amount", precision = 10, scale = 2)
-    private BigDecimal totalAmount;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    private InvoiceStatus status;
-
-    @Column(name = "uploaded_at", nullable = false)
-    @Builder.Default
-    private LocalDateTime uploadedAt = LocalDateTime.now();
-
-    @Column(name = "confirmed_at")
-    private LocalDateTime confirmedAt;
-
     @Column(name = "pdf_path", length = 255)
     private String pdfPath;
+
+    @Column(name = "delivery_address", length = 255)
+    private String deliveryAddress;
+
+    @Column(name = "receivable_amount", precision = 10, scale = 2)
+    private BigDecimal receivableAmount; // 應收總額
+
+    @Column(name = "cash_discount", precision = 10, scale = 2)
+    private BigDecimal cashDiscount; // 現金扣款
+
+    @Column(name = "net_payable", precision = 10, scale = 2)
+    private BigDecimal netPayable; // 付現應收
+
+    @Column(name = "created_at", nullable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

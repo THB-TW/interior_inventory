@@ -38,7 +38,8 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
     OK: { label: '吻合', className: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
     QTY_MISMATCH: { label: '數量異常', className: 'bg-red-100 text-red-700 border border-red-200' },
     PRICE_MISMATCH: { label: '單價異常', className: 'bg-red-100 text-red-700 border border-red-200' },
-    NOT_FOUND: { label: '未登錄', className: 'bg-yellow-100 text-yellow-700 border border-yellow-200' },
+    NOT_FOUND_IN_SYS: { label: '未登錄', className: 'bg-yellow-100 text-yellow-700 border border-yellow-200' },
+    NOT_FOUND_IN_PDF: { label: '未出現', className: 'bg-slate-100 text-slate-500 border border-slate-200' },
   };
 
   // 如果傳入的狀態找不到對應，就直接顯示該文字並套用預設樣式

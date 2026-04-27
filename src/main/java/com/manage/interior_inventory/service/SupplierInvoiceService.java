@@ -1,13 +1,17 @@
 package com.manage.interior_inventory.service;
 
-import com.manage.interior_inventory.dto.finance.invoice.InvoiceCompareResultDto;
-import com.manage.interior_inventory.dto.finance.invoice.InvoiceConfirmRequest;
-import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceSummaryDto;
+import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface SupplierInvoiceService {
-    InvoiceCompareResultDto uploadAndParse(Long projectId, MultipartFile file);
-    void confirmInvoice(InvoiceConfirmRequest req);
-    List<SupplierInvoiceSummaryDto> listByProject(Long projectId);
+
+    /** 上傳 PDF → 解析 → 比對 → 寫入 DB → 回傳比對結果 */
+    SupplierInvoiceUploadResponse uploadAndParse(Long projectId, MultipartFile file);
+
+    /** 查詢單一對帳單的完整明細（含批次分組） */
+    SupplierInvoiceUploadResponse getDetail(Long invoiceId);
+
+    /** 查詢某案件的所有對帳單摘要列表 */
+    List<SupplierInvoiceUploadResponse> listByProject(Long projectId);
 }

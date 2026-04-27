@@ -1,91 +1,196 @@
 package com.manage.interior_inventory.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.springframework.web.multipart.MultipartFile;
-import lombok.extern.slf4j.Slf4j;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.regex.*;
 
 @Slf4j
 public class PdfBoxOcrParser {
 
-    public record ParsedInvoiceItem(String deliveryDate, String invoiceNo, String materialName, String unit, BigDecimal quantity, BigDecimal unitPrice, BigDecimal totalPrice, boolean isReturn) {}
-    public record ParseResult(String supplierName, String invoiceDateRange, List<ParsedInvoiceItem> items) {}
+    // ── 解析結果 Record ───────────────────────────────────────────────
 
-    public static ParseResult parse(MultipartFile file) {
-        try (InputStream is = file.getInputStream(); PDDocument document = Loader.loadPDF(is.readAllBytes())) {
-            PDFTextStripper stripper = new PDFTextStripper();
-            String text = stripper.getText(document);
+    public record ParsedItem(
+            String materialNameRaw,
+            String unit,
+            BigDecimal quantity, // 退貨為負
+            BigDecimal unitPrice,
+            BigDecimal totalPrice,
+            LocalDate deliveryDate,
+            boolean isReturn) {
+    }
 
-            if (text == null || text.trim().isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "無法解析此 PDF，請確認為文字型 PDF");
-            }
+    public record ParseResult(
+            String deliveryAddress,
+            BigDecimal receivableAmount,
+            BigDecimal cashDiscount,
+            BigDecimal netPayable,
+            List<ParsedItem> items // 含退貨行
+    ) {
+    }
 
-            List<ParsedInvoiceItem> items = new ArrayList<>();
-            String[] lines = text.split("\\r?\\n");
+    // ── Regex ─────────────────────────────────────────────────────────
 
-            String invoiceDateRange = null;
-            String supplierName = "建材商(未解析)";
+    // 送貨地點
+    private static final Pattern P_DELIVERY = Pattern.compile("送貨地點[：:]*\\s*(.+)");
 
-            Pattern itemPattern = Pattern.compile("(.+?)\\s+(\\d+)([支片箱台組式坪])\\s+(\\d[\\d,]*)\\s+([\\d,]+)");
+    // 應收總額：e.g. "應收總額: 48,430"
+    private static final Pattern P_RECEIVABLE = Pattern.compile("應收總額[：:]*\\s*([\\d,]+)");
 
-            for (String line : lines) {
-                String tLine = line.trim();
+    // 現金扣款：e.g. "現金扣款4%:1,937"
+    private static final Pattern P_DISCOUNT = Pattern.compile("現金扣款[^:：]*[：:]\\s*([\\d,]+)");
 
-                if (tLine.matches("^\\d+$") || tLine.contains("~") || tLine.contains("----") || tLine.contains("★★★★")) {
-                    continue;
-                }
+    // 付現應收：e.g. "付現應收: 46,493"
+    private static final Pattern P_NET = Pattern.compile("付現應收[：:]*\\s*([\\d,]+)");
 
-                if (tLine.startsWith("客戶名稱") || tLine.contains("建材")) {
-                     if (supplierName.equals("建材商(未解析)")) {
-                         supplierName = tLine;
-                     }
-                }
+    // 批次 header：民國日期 + 出貨單號，同一行或相鄰
+    // e.g. "115/02/09 115020185"
+    private static final Pattern P_BATCH_HEADER = Pattern.compile("^(\\d{3}/\\d{2}/\\d{2})\\s+(\\d{5,})");
 
-                if (tLine.startsWith("帳款區間:")) {
-                    invoiceDateRange = tLine.substring(tLine.indexOf(":") + 1).trim();
-                }
+    // 品項行：材料名稱 數量+單位 單價 金額
+    // 支援常見建材單位
+    private static final Pattern P_ITEM = Pattern.compile(
+            "^(退\\s+)?(.+?)\\s+" +
+                    "(-?\\d+(?:\\.\\d+)?)" +
+                    "(支|片|箱|才|組|包|桶|條|塊|式|坪|張|個|捲|套|m²|㎡)" +
+                    "\\s+(-?[\\d,]+(?:\\.\\d+)?)\\s+(-?[\\d,]+)$");
 
-                boolean isReturn = tLine.startsWith("退");
-                String parseLine = isReturn ? tLine.substring(1).trim() : tLine;
+    // 退貨區段標記
+    private static final Pattern P_RETURN_SECTION = Pattern.compile(".*以下退回收退料.*");
 
-                Matcher m = itemPattern.matcher(parseLine);
-                if (m.find()) {
-                    String materialName = m.group(1).trim();
-                    String qtyStr = m.group(2).replace(",", "");
-                    String unit = m.group(3);
-                    String unitPriceStr = m.group(4).replace(",", "");
-                    String totalPriceStr = m.group(5).replace(",", "");
+    // 跳過行（小計數字、分隔線、礦泉水★、帳款區間等）
+    private static final Pattern P_SKIP = Pattern.compile(
+            "^[\\d,]+$|^-{3,}|^~{2,}|.*★{3,}|^票期|^稅金|^出貨單|收款對帳單");
 
-                    BigDecimal qty = new BigDecimal(qtyStr);
-                    BigDecimal unitPrice = new BigDecimal(unitPriceStr);
-                    BigDecimal totalPrice = new BigDecimal(totalPriceStr);
+    // ── 工具：民國年 → LocalDate ──────────────────────────────────────
 
-                    if (isReturn) {
-                        qty = qty.negate();
-                        totalPrice = totalPrice.negate();
-                    }
+    private static LocalDate rocToDate(String roc) {
+        // "115/02/09" → 2026-02-09
+        String[] p = roc.split("/");
+        return LocalDate.of(
+                Integer.parseInt(p[0]) + 1911,
+                Integer.parseInt(p[1]),
+                Integer.parseInt(p[2]));
+    }
 
-                    items.add(new ParsedInvoiceItem(invoiceDateRange, null, materialName, unit, qty, unitPrice, totalPrice, isReturn));
-                }
-            }
+    private static BigDecimal parseMoney(String s) {
+        if (s == null || s.isBlank())
+            return null;
+        return new BigDecimal(s.replace(",", ""));
+    }
 
-            return new ParseResult(supplierName, invoiceDateRange, items);
+    // ── 主入口 ────────────────────────────────────────────────────────
 
+    public static ParseResult parse(byte[] pdfBytes) {
+        try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
+            String text = new PDFTextStripper().getText(doc);
+            if (text == null || text.isBlank())
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "無法解析此 PDF，請確認為文字型 PDF");
+            return parseText(text);
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to parse PDF", e);
-            if (e instanceof ResponseStatusException) {
-                throw (ResponseStatusException) e;
-            }
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "無法解析此 PDF，請確認為文字型 PDF", e);
+            log.error("PDF parse failed", e);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "PDF 解析失敗：" + e.getMessage(), e);
         }
+    }
+
+    /** 純文字入口，方便單元測試 */
+    public static ParseResult parseText(String text) {
+        String[] lines = text.split("\\r?\\n");
+
+        // ── Phase 1：Header（掃全文，找到即記錄）────────────────────
+        String deliveryAddress = null;
+        BigDecimal receivableAmount = null;
+        BigDecimal cashDiscount = null;
+        BigDecimal netPayable = null;
+
+        for (String raw : lines) {
+            String t = raw.trim();
+            if (deliveryAddress == null) {
+                Matcher m = P_DELIVERY.matcher(t);
+                if (m.find())
+                    deliveryAddress = m.group(1).trim();
+            }
+            if (receivableAmount == null) {
+                Matcher m = P_RECEIVABLE.matcher(t);
+                if (m.find())
+                    receivableAmount = parseMoney(m.group(1));
+            }
+            if (cashDiscount == null) {
+                Matcher m = P_DISCOUNT.matcher(t);
+                if (m.find())
+                    cashDiscount = parseMoney(m.group(1));
+            }
+            if (netPayable == null) {
+                Matcher m = P_NET.matcher(t);
+                if (m.find())
+                    netPayable = parseMoney(m.group(1));
+            }
+        }
+
+        // ── Phase 2：品項（依批次 header 分組）──────────────────────
+        List<ParsedItem> items = new ArrayList<>();
+        boolean returnMode = false;
+        LocalDate currentDate = null;
+
+        for (String raw : lines) {
+            String t = raw.trim();
+            if (t.isEmpty())
+                continue;
+
+            // 退貨區段標記
+            if (P_RETURN_SECTION.matcher(t).find()) {
+                returnMode = true;
+                continue;
+            }
+
+            // 跳過行
+            if (P_SKIP.matcher(t).find())
+                continue;
+
+            // 批次 header：更新當前日期
+            Matcher bm = P_BATCH_HEADER.matcher(t);
+            if (bm.find()) {
+                currentDate = rocToDate(bm.group(1));
+                continue;
+            }
+
+            // 品項行
+            Matcher im = P_ITEM.matcher(t);
+            if (!im.matches())
+                continue;
+
+            boolean hasReturnPrefix = im.group(1) != null;
+            boolean isReturn = returnMode || hasReturnPrefix;
+            String name = im.group(2).trim();
+            BigDecimal qty = parseMoney(im.group(3));
+            String unit = im.group(4);
+            BigDecimal price = parseMoney(im.group(5));
+            BigDecimal total = parseMoney(im.group(6));
+
+            // 退貨確保數值為負
+            if (isReturn) {
+                if (qty != null && qty.signum() > 0)
+                    qty = qty.negate();
+                if (total != null && total.signum() > 0)
+                    total = total.negate();
+            }
+
+            items.add(new ParsedItem(
+                    name, unit, qty, price, total, currentDate, isReturn));
+        }
+
+        return new ParseResult(
+                deliveryAddress, receivableAmount, cashDiscount, netPayable, items);
     }
 }

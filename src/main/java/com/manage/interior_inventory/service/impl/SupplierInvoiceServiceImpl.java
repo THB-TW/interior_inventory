@@ -1,20 +1,13 @@
 package com.manage.interior_inventory.service.impl;
 
-import com.manage.interior_inventory.dto.finance.invoice.InvoiceCompareResultDto;
-import com.manage.interior_inventory.dto.finance.invoice.InvoiceConfirmRequest;
-import com.manage.interior_inventory.dto.finance.invoice.InvoiceItemCompareDto;
-import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceSummaryDto;
-import com.manage.interior_inventory.entity.CaseMaterial;
-import com.manage.interior_inventory.entity.Project;
-import com.manage.interior_inventory.entity.SupplierInvoice;
-import com.manage.interior_inventory.entity.SupplierInvoiceItem;
+import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse;
+import com.manage.interior_inventory.dto.finance.invoice.SupplierInvoiceUploadResponse.*;
+import com.manage.interior_inventory.entity.*;
 import com.manage.interior_inventory.entity.enums.InvoiceItemMatchStatus;
-import com.manage.interior_inventory.entity.enums.InvoiceStatus;
-import com.manage.interior_inventory.repository.CaseMaterialRepository;
-import com.manage.interior_inventory.repository.ProjectRepository;
-import com.manage.interior_inventory.repository.SupplierInvoiceRepository;
+import com.manage.interior_inventory.repository.*;
 import com.manage.interior_inventory.service.SupplierInvoiceService;
 import com.manage.interior_inventory.util.PdfBoxOcrParser;
+import com.manage.interior_inventory.util.PdfBoxOcrParser.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,19 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
 @Service
 @RequiredArgsConstructor
@@ -50,170 +36,264 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
     @Value("${app.upload.invoice-dir:uploads/invoices}")
     private String uploadDir;
 
+    // ────────────────────────────────────────────────────────────────
+    // 上傳 & 解析 & 比對
+    // ────────────────────────────────────────────────────────────────
+
     @Override
     @Transactional
-    public InvoiceCompareResultDto uploadAndParse(Long projectId, MultipartFile file) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+    public SupplierInvoiceUploadResponse uploadAndParse(
+            Long projectId, MultipartFile file) {
 
-        String filename = projectId + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID() + ".pdf";
-        Path targetLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Project not found: " + projectId));
+
+        // 1. 存 PDF 實體檔案
+        String pdfPath = saveFile(projectId, file);
+
+        // 2. 解析 PDF
+        ParseResult pr;
         try {
-            Files.createDirectories(targetLocation);
-            Files.copy(file.getInputStream(), targetLocation.resolve(filename));
-        } catch (Exception e) {
-            log.error("Could not store file " + filename, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file", e);
+            pr = PdfBoxOcrParser.parse(file.getBytes());
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "無法讀取 PDF 檔案", e);
         }
 
-        PdfBoxOcrParser.ParseResult parseResult = PdfBoxOcrParser.parse(file);
-
-        List<CaseMaterial> caseMaterials = caseMaterialRepository.findByProject_Id(projectId);
-
+        // 3. 建立 Invoice Header
         SupplierInvoice invoice = SupplierInvoice.builder()
                 .project(project)
-                .supplierName(parseResult.supplierName())
-                .invoiceNumber("INV-" + System.currentTimeMillis())
-                .invoiceDate(LocalDate.now())
-                .status(InvoiceStatus.PENDING_REVIEW)
-                .pdfPath(targetLocation.resolve(filename).toString())
-                .totalAmount(BigDecimal.ZERO)
+                .pdfPath(pdfPath)
+                .deliveryAddress(pr.deliveryAddress())
+                .receivableAmount(pr.receivableAmount())
+                .cashDiscount(pr.cashDiscount())
+                .netPayable(pr.netPayable())
                 .build();
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        List<InvoiceItemCompareDto> itemDtos = new ArrayList<>();
-        int okCount = 0, mismatchCount = 0, notFoundCount = 0;
+        // 4. 取得此案件的所有報價材料
+        List<CaseMaterial> caseMaterials = caseMaterialRepository.findByProject_Id(projectId);
 
-        for (PdfBoxOcrParser.ParsedInvoiceItem pItem : parseResult.items()) {
-            totalAmount = totalAmount.add(pItem.totalPrice());
+        // 5. 計算批次號碼
+        // - 依出貨日期排序，最早 = 1，次早 = 2...
+        // - 退貨固定 batch_no = 0
+        List<LocalDate> sortedDates = pr.items().stream()
+                .filter(i -> !i.isReturn() && i.deliveryDate() != null)
+                .map(ParsedItem::deliveryDate)
+                .distinct()
+                .sorted()
+                .toList();
 
-            InvoiceItemMatchStatus matchStatus = InvoiceItemMatchStatus.NOT_FOUND;
-            Long matchedCaseMaterialId = null;
-            BigDecimal systemQty = null;
-            BigDecimal systemUnitPrice = null;
+        Map<LocalDate, Integer> dateToBatch = new LinkedHashMap<>();
+        for (int i = 0; i < sortedDates.size(); i++)
+            dateToBatch.put(sortedDates.get(i), i + 1);
 
-            if (!pItem.isReturn()) {
-                String normName = normalizeMaterialName(pItem.materialName());
-                Optional<CaseMaterial> matchOpt = caseMaterials.stream()
-                        .filter(cm -> normalizeMaterialName(cm.getMaterial().getName()).equals(normName))
-                        .findFirst();
+        // 6. 逐筆建立明細 + 比對
+        Set<Long> matchedCaseMaterialIds = new HashSet<>();
 
-                if (matchOpt.isPresent()) {
-                    CaseMaterial match = matchOpt.get();
-                    matchedCaseMaterialId = match.getId();
-                    systemQty = BigDecimal.valueOf(match.getQuantity());
-                    systemUnitPrice = match.getUnitPrice();
+        for (ParsedItem pi : pr.items()) {
+            int batchNo = pi.isReturn() ? 0
+                    : dateToBatch.getOrDefault(pi.deliveryDate(), 1);
 
-                    if (systemQty.compareTo(pItem.quantity()) != 0) {
-                        matchStatus = InvoiceItemMatchStatus.QTY_MISMATCH;
-                    } else if (systemUnitPrice != null && systemUnitPrice.compareTo(pItem.unitPrice()) != 0) {
-                        matchStatus = InvoiceItemMatchStatus.PRICE_MISMATCH;
-                    } else {
-                        matchStatus = InvoiceItemMatchStatus.OK;
-                    }
+            Optional<CaseMaterial> matchOpt = findMatch(caseMaterials, pi.materialNameRaw());
+
+            InvoiceItemMatchStatus status;
+            Long matchedMaterialId = null;
+
+            if (pi.isReturn()) {
+                // 退貨行不做缺漏判定，直接 OK
+                status = InvoiceItemMatchStatus.OK;
+
+            } else if (matchOpt.isPresent()) {
+                CaseMaterial cm = matchOpt.get();
+                matchedMaterialId = cm.getMaterial().getId();
+                matchedCaseMaterialIds.add(cm.getId());
+
+                BigDecimal sysQty = BigDecimal.valueOf(cm.getQuantity());
+                BigDecimal sysPrice = cm.getUnitPrice();
+
+                if (pi.quantity().compareTo(sysQty) != 0) {
+                    status = InvoiceItemMatchStatus.QTY_MISMATCH;
+                } else if (sysPrice != null
+                        && pi.unitPrice() != null
+                        && sysPrice.compareTo(pi.unitPrice()) != 0) {
+                    status = InvoiceItemMatchStatus.PRICE_MISMATCH;
                 } else {
-                    matchStatus = InvoiceItemMatchStatus.NOT_FOUND;
+                    status = InvoiceItemMatchStatus.OK;
                 }
+
             } else {
-                matchStatus = InvoiceItemMatchStatus.OK;
+                // PDF 有，系統沒有
+                status = InvoiceItemMatchStatus.NOT_FOUND_IN_SYS;
             }
 
-            if (matchStatus == InvoiceItemMatchStatus.OK) okCount++;
-            else if (matchStatus == InvoiceItemMatchStatus.NOT_FOUND) notFoundCount++;
-            else mismatchCount++;
-
-            SupplierInvoiceItem item = SupplierInvoiceItem.builder()
-                    .materialName(pItem.materialName())
-                    .unit(pItem.unit())
-                    .quantity(pItem.quantity())
-                    .unitPrice(pItem.unitPrice())
-                    .totalPrice(pItem.totalPrice())
-                    .isReturn(pItem.isReturn())
-                    .matchStatus(matchStatus)
-                    .caseMaterialId(matchedCaseMaterialId)
-                    .build();
-
-            invoice.addItem(item);
-
-            itemDtos.add(new InvoiceItemCompareDto(
-                    pItem.materialName(),
-                    "",
-                    pItem.unit(),
-                    pItem.quantity(),
-                    pItem.unitPrice(),
-                    pItem.totalPrice(),
-                    systemQty,
-                    systemUnitPrice,
-                    matchStatus,
-                    matchedCaseMaterialId,
-                    pItem.isReturn()
-            ));
+            invoice.addItem(SupplierInvoiceItem.builder()
+                    .batchNo(batchNo)
+                    .deliveryDate(pi.deliveryDate())
+                    .materialId(matchedMaterialId)
+                    .materialNameRaw(pi.materialNameRaw())
+                    .unit(pi.unit())
+                    .quantity(pi.quantity())
+                    .unitPrice(pi.unitPrice())
+                    .totalPrice(pi.totalPrice())
+                    .matchStatus(status)
+                    .build());
         }
 
-        invoice.setTotalAmount(totalAmount);
+        // 7. 補 NOT_FOUND_IN_PDF：系統有但 PDF 完全沒出現的材料
+        for (CaseMaterial cm : caseMaterials) {
+            if (matchedCaseMaterialIds.contains(cm.getId()))
+                continue;
+
+            invoice.addItem(SupplierInvoiceItem.builder()
+                    .batchNo(-1) // -1 代表虛擬補充行
+                    .deliveryDate(null)
+                    .materialId(cm.getMaterial().getId())
+                    .materialNameRaw(cm.getMaterial().getName())
+                    .unit(cm.getMaterial().getUnit() != null
+                            ? cm.getMaterial().getUnit()
+                            : "")
+                    .quantity(BigDecimal.ZERO)
+                    .unitPrice(null)
+                    .totalPrice(null)
+                    .matchStatus(InvoiceItemMatchStatus.NOT_FOUND_IN_PDF)
+                    .build());
+        }
+
+        // 8. 儲存
         invoiceRepository.save(invoice);
 
-        return new InvoiceCompareResultDto(
-                invoice.getId(),
-                invoice.getSupplierName(),
-                invoice.getInvoiceNumber(),
-                invoice.getInvoiceDate(),
-                invoice.getTotalAmount(),
-                itemDtos,
-                okCount,
-                mismatchCount,
-                notFoundCount
-        );
+        return buildResponse(invoice);
     }
 
-    @Override
-    @Transactional
-    public void confirmInvoice(InvoiceConfirmRequest req) {
-        SupplierInvoice invoice = invoiceRepository.findById(req.tempInvoiceId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
-
-        if (!invoice.getProject().getId().equals(req.projectId())) {
-             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invoice does not belong to project");
-        }
-
-        if (invoice.getStatus() == InvoiceStatus.CONFIRMED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invoice is already confirmed");
-        }
-
-        invoice.setStatus(InvoiceStatus.CONFIRMED);
-        invoice.setConfirmedAt(LocalDateTime.now());
-        invoiceRepository.save(invoice);
-    }
+    // ────────────────────────────────────────────────────────────────
+    // 查詢單一對帳單
+    // ────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
-    public List<SupplierInvoiceSummaryDto> listByProject(Long projectId) {
-        return invoiceRepository.findByProjectIdOrderByUploadedAtDesc(projectId).stream()
-                .map(inv -> {
-                    int ok = 0, mismatch = 0, notFound = 0;
-                    for (SupplierInvoiceItem item : inv.getItems()) {
-                        if (item.getMatchStatus() == InvoiceItemMatchStatus.OK) ok++;
-                        else if (item.getMatchStatus() == InvoiceItemMatchStatus.NOT_FOUND) notFound++;
-                        else mismatch++;
-                    }
-                    return new SupplierInvoiceSummaryDto(
-                            inv.getId(),
-                            inv.getSupplierName(),
-                            inv.getInvoiceNumber(),
-                            inv.getInvoiceDate(),
-                            inv.getTotalAmount(),
-                            inv.getStatus(),
-                            inv.getUploadedAt(),
-                            ok,
-                            mismatch,
-                            notFound
-                    );
-                })
+    public SupplierInvoiceUploadResponse getDetail(Long invoiceId) {
+        SupplierInvoice invoice = invoiceRepository.findByIdWithItems(invoiceId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Invoice not found: " + invoiceId));
+        return buildResponse(invoice);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // 查詢案件所有對帳單列表
+    // ────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SupplierInvoiceUploadResponse> listByProject(Long projectId) {
+        return invoiceRepository
+                .findByProject_IdOrderByCreatedAtDesc(projectId)
+                .stream()
+                .map(this::buildResponse)
                 .collect(Collectors.toList());
     }
 
-    private String normalizeMaterialName(String name) {
-        if (name == null) return "";
-        return name.trim().replaceAll("　", "").replaceAll("\\s", "").replace("*", "×");
+    // ────────────────────────────────────────────────────────────────
+    // 私有工具方法
+    // ────────────────────────────────────────────────────────────────
+
+    /** 組裝 Response，明細依 batch_no 分組排序 */
+    private SupplierInvoiceUploadResponse buildResponse(SupplierInvoice invoice) {
+
+        int ok = 0, notSys = 0, notPdf = 0, qtyMis = 0, priceMis = 0;
+
+        // 依 batch_no 分組
+        Map<Integer, List<SupplierInvoiceItem>> byBatch = invoice.getItems()
+                .stream()
+                .collect(Collectors.groupingBy(SupplierInvoiceItem::getBatchNo));
+
+        // batch_no 排序：1, 2, 3... 最後才是 0(退貨)，-1(NOT_FOUND_IN_PDF) 排最後
+        List<BatchGroup> batches = byBatch.entrySet().stream()
+                .sorted(Comparator.comparingInt(e -> {
+                    int k = e.getKey();
+                    if (k == -1)
+                        return Integer.MAX_VALUE; // NOT_FOUND_IN_PDF 排最後
+                    if (k == 0)
+                        return Integer.MAX_VALUE - 1; // 退貨倒數第二
+                    return k;
+                }))
+                .map(e -> {
+                    List<ItemDto> dtos = e.getValue().stream()
+                            .map(it -> new ItemDto(
+                                    it.getId(),
+                                    it.getMaterialNameRaw(),
+                                    it.getUnit(),
+                                    it.getQuantity(),
+                                    it.getUnitPrice(),
+                                    it.getTotalPrice(),
+                                    it.getMaterialId(),
+                                    it.getMatchStatus()))
+                            .toList();
+
+                    // 取該批次的出貨日期（第一筆有值的）
+                    LocalDate date = e.getValue().stream()
+                            .map(SupplierInvoiceItem::getDeliveryDate)
+                            .filter(Objects::nonNull)
+                            .findFirst()
+                            .orElse(null);
+
+                    return new BatchGroup(e.getKey(), date, dtos);
+                })
+                .toList();
+
+        // 統計
+        for (SupplierInvoiceItem it : invoice.getItems()) {
+            switch (it.getMatchStatus()) {
+                case OK -> ok++;
+                case NOT_FOUND_IN_SYS -> notSys++;
+                case NOT_FOUND_IN_PDF -> notPdf++;
+                case QTY_MISMATCH -> qtyMis++;
+                case PRICE_MISMATCH -> priceMis++;
+            }
+        }
+
+        return new SupplierInvoiceUploadResponse(
+                invoice.getId(),
+                invoice.getDeliveryAddress(),
+                invoice.getReceivableAmount(),
+                invoice.getCashDiscount(),
+                invoice.getNetPayable(),
+                batches,
+                ok, notSys, notPdf, qtyMis, priceMis);
+    }
+
+    /** 用正規化名稱比對系統材料 */
+    private Optional<CaseMaterial> findMatch(
+            List<CaseMaterial> caseMaterials, String pdfName) {
+        String norm = normalize(pdfName);
+        return caseMaterials.stream()
+                .filter(cm -> normalize(cm.getMaterial().getName()).equals(norm))
+                .findFirst();
+    }
+
+    /** 儲存上傳的 PDF 檔案，回傳絕對路徑字串 */
+    private String saveFile(Long projectId, MultipartFile file) {
+        try {
+            Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+            String filename = projectId + "_" + UUID.randomUUID() + ".pdf";
+            Path target = dir.resolve(filename);
+            Files.copy(file.getInputStream(), target,
+                    StandardCopyOption.REPLACE_EXISTING);
+            return target.toString();
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "檔案儲存失敗", e);
+        }
+    }
+
+    /** 標準化材料名稱：去空白、統一符號、轉小寫 */
+    private static String normalize(String name) {
+        if (name == null)
+            return "";
+        return name.trim()
+                .replaceAll("[　\\s]+", "")
+                .replace("*", "×")
+                .toLowerCase();
     }
 }
