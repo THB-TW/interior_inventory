@@ -54,7 +54,7 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
         List<SupplierInvoice> existing = invoiceRepository.findByProject_IdOrderByCreatedAtDesc(projectId);
         if (!existing.isEmpty()) {
             invoiceRepository.deleteAll(existing);
-            invoiceRepository.flush(); // 確保刪除先 commit，避免 unique 衝突
+            invoiceRepository.flush();
         }
 
         // 1. 存 PDF 實體檔案
@@ -81,12 +81,16 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                 .netPayable(pr.netPayable())
                 .build();
 
-        // 4. 取得此案件的所有報價材料
-        List<CaseMaterial> caseMaterials = caseMaterialRepository.findByProject_Id(projectId);
+        // 4. 取得此案件所有材料，依類型分組
+        List<CaseMaterial> allCaseMaterials = caseMaterialRepository.findByProject_Id(projectId);
 
-        // 5. 計算批次號碼
-        // - 依出貨日期排序，最早 = 1，次早 = 2...
-        // - 退貨固定 batch_no = 0
+        // 進貨批次（PURCHASE）：用於批次號比對
+        List<CaseMaterial> purchaseMaterials = allCaseMaterials.stream()
+                .filter(cm -> cm.getMaterialType() == CaseMaterialType.PURCHASE)
+                .toList();
+
+        // 5. 從 PDF 進貨行（非退貨）的出貨日期，建立「出貨日期 → PDF批次號」對照表
+        // 最早日期 = 批次1，次早 = 批次2，依此類推
         List<LocalDate> sortedDates = pr.items().stream()
                 .filter(i -> !i.isReturn() && i.deliveryDate() != null)
                 .map(ParsedItem::deliveryDate)
@@ -98,43 +102,68 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
         for (int i = 0; i < sortedDates.size(); i++)
             dateToBatch.put(sortedDates.get(i), i + 1);
 
+        log.debug("[SupplierInvoice] PDF 批次對照表: {}", dateToBatch);
+
         // 6. 逐筆建立明細 + 比對
         Set<Long> matchedCaseMaterialIds = new HashSet<>();
 
         for (ParsedItem pi : pr.items()) {
+            // 退貨行固定 batchNo = 0，進貨行依出貨日期對照
             int batchNo = pi.isReturn() ? 0
                     : dateToBatch.getOrDefault(pi.deliveryDate(), 1);
-
-            Optional<CaseMaterial> matchOpt = findMatch(caseMaterials, pi.materialNameRaw());
 
             InvoiceItemMatchStatus status;
             Long matchedMaterialId = null;
 
             if (pi.isReturn()) {
-                // 退貨行不做缺漏判定，直接 OK
-                status = InvoiceItemMatchStatus.OK;
-
-            } else if (matchOpt.isPresent()) {
-                CaseMaterial cm = matchOpt.get();
-                matchedMaterialId = cm.getMaterial().getId();
-                matchedCaseMaterialIds.add(cm.getId());
-
-                BigDecimal sysQty = BigDecimal.valueOf(cm.getQuantity());
-                BigDecimal sysPrice = cm.getUnitPrice();
-
-                if (pi.quantity().compareTo(sysQty) != 0) {
-                    status = InvoiceItemMatchStatus.QTY_MISMATCH;
-                } else if (sysPrice != null
-                        && pi.unitPrice() != null
-                        && sysPrice.compareTo(pi.unitPrice()) != 0) {
-                    status = InvoiceItemMatchStatus.PRICE_MISMATCH;
-                } else {
-                    status = InvoiceItemMatchStatus.OK;
-                }
+                // 退貨行：暫維持 RETURNED（問題二再處理完整退貨比對）
+                status = InvoiceItemMatchStatus.RETURNED;
 
             } else {
-                // PDF 有，系統沒有
-                status = InvoiceItemMatchStatus.NOT_FOUND_IN_SYS;
+                // ── 進貨行：先判批次是否存在，再判名稱 ──
+                // 1. 這個 PDF 批次號，系統有沒有任何材料對應？
+                boolean batchExists = purchaseMaterials.stream()
+                        .anyMatch(cm -> cm.getOrderBatch() == batchNo);
+
+                if (!batchExists) {
+                    // 批次根本不存在（例如系統只叫了2批，PDF出現第5批）
+                    // 不管名稱有沒有，都是批次未叫貨
+                    log.warn("[SupplierInvoice] 批次不存在 - 材料: {}, PDF批次: {}, 系統最大批次: {}",
+                            pi.materialNameRaw(), batchNo,
+                            purchaseMaterials.stream()
+                                    .mapToInt(CaseMaterial::getOrderBatch)
+                                    .max().orElse(0));
+                    status = InvoiceItemMatchStatus.BATCH_NOT_FOUND_IN_SYS;
+
+                } else {
+                    // 批次存在，再比對名稱
+                    Optional<CaseMaterial> matchOpt = findMatchByBatch(purchaseMaterials, pi.materialNameRaw(),
+                            batchNo);
+
+                    if (matchOpt.isPresent()) {
+                        // 名稱 & 批次都對上：比對數量、單價
+                        CaseMaterial cm = matchOpt.get();
+                        matchedMaterialId = cm.getMaterial().getId();
+                        matchedCaseMaterialIds.add(cm.getId());
+
+                        BigDecimal sysQty = BigDecimal.valueOf(cm.getQuantity());
+                        BigDecimal sysPrice = cm.getUnitPrice();
+
+                        if (pi.quantity().compareTo(sysQty) != 0) {
+                            status = InvoiceItemMatchStatus.QTY_MISMATCH;
+                        } else if (sysPrice != null
+                                && pi.unitPrice() != null
+                                && sysPrice.compareTo(pi.unitPrice()) != 0) {
+                            status = InvoiceItemMatchStatus.PRICE_MISMATCH;
+                        } else {
+                            status = InvoiceItemMatchStatus.OK;
+                        }
+
+                    } else {
+                        // 批次存在，但這個批次裡找不到這個材料名稱
+                        status = InvoiceItemMatchStatus.NOT_FOUND_IN_SYS;
+                    }
+                }
             }
 
             invoice.addItem(SupplierInvoiceItem.builder()
@@ -150,8 +179,8 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                     .build());
         }
 
-        // 7. 補 NOT_FOUND_IN_PDF：系統有但 PDF 完全沒出現的材料
-        for (CaseMaterial cm : caseMaterials) {
+        // 7. 補 NOT_FOUND_IN_PDF：系統進貨記錄有但 PDF 完全沒出現的材料批次
+        for (CaseMaterial cm : purchaseMaterials) {
             if (matchedCaseMaterialIds.contains(cm.getId()))
                 continue;
 
@@ -210,21 +239,21 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
     /** 組裝 Response，明細依 batch_no 分組排序 */
     private SupplierInvoiceUploadResponse buildResponse(SupplierInvoice invoice) {
 
-        int ok = 0, notSys = 0, notPdf = 0, qtyMis = 0, priceMis = 0;
+        int ok = 0, notSys = 0, notPdf = 0, qtyMis = 0, priceMis = 0, batchNotFound = 0, returned = 0;
 
         // 依 batch_no 分組
         Map<Integer, List<SupplierInvoiceItem>> byBatch = invoice.getItems()
                 .stream()
                 .collect(Collectors.groupingBy(SupplierInvoiceItem::getBatchNo));
 
-        // batch_no 排序：1, 2, 3... 最後才是 0(退貨)，-1(NOT_FOUND_IN_PDF) 排最後
+        // batch_no 排序：1, 2, 3... → 0(退貨) → -1(NOT_FOUND_IN_PDF) 排最後
         List<BatchGroup> batches = byBatch.entrySet().stream()
                 .sorted(Comparator.comparingInt(e -> {
                     int k = e.getKey();
                     if (k == -1)
-                        return Integer.MAX_VALUE; // NOT_FOUND_IN_PDF 排最後
+                        return Integer.MAX_VALUE;
                     if (k == 0)
-                        return Integer.MAX_VALUE - 1; // 退貨倒數第二
+                        return Integer.MAX_VALUE - 1;
                     return k;
                 }))
                 .map(e -> {
@@ -240,7 +269,6 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                                     it.getMatchStatus()))
                             .toList();
 
-                    // 取該批次的出貨日期（第一筆有值的）
                     LocalDate date = e.getValue().stream()
                             .map(SupplierInvoiceItem::getDeliveryDate)
                             .filter(Objects::nonNull)
@@ -251,14 +279,16 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                 })
                 .toList();
 
-        // 統計
+        // 統計（BATCH_NOT_FOUND_IN_SYS 歸入 notSys 類）
         for (SupplierInvoiceItem it : invoice.getItems()) {
             switch (it.getMatchStatus()) {
                 case OK -> ok++;
                 case NOT_FOUND_IN_SYS -> notSys++;
+                case BATCH_NOT_FOUND_IN_SYS -> batchNotFound++;
                 case NOT_FOUND_IN_PDF -> notPdf++;
                 case QTY_MISMATCH -> qtyMis++;
                 case PRICE_MISMATCH -> priceMis++;
+                case RETURNED -> returned++;
             }
         }
 
@@ -269,15 +299,22 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                 invoice.getCashDiscount(),
                 invoice.getNetPayable(),
                 batches,
-                ok, notSys, notPdf, qtyMis, priceMis);
+                ok, notSys, notPdf, qtyMis, priceMis, batchNotFound, returned);
     }
 
-    /** 用正規化名稱比對系統材料 */
-    private Optional<CaseMaterial> findMatch(
-            List<CaseMaterial> caseMaterials, String pdfName) {
+    /**
+     * 依「材料名稱 + 叫貨批次號」比對進貨記錄（排除退貨行）
+     * pdfBatchNo：從 PDF 出貨日期排序得出（最早=1, 次早=2...）
+     * CaseMaterial.orderBatch：老闆在系統填寫的叫貨批次
+     */
+    private Optional<CaseMaterial> findMatchByBatch(
+            List<CaseMaterial> purchaseMaterials,
+            String pdfName,
+            int pdfBatchNo) {
         String norm = normalize(pdfName);
-        return caseMaterials.stream()
+        return purchaseMaterials.stream()
                 .filter(cm -> normalize(cm.getMaterial().getName()).equals(norm))
+                .filter(cm -> cm.getOrderBatch() == pdfBatchNo)
                 .findFirst();
     }
 

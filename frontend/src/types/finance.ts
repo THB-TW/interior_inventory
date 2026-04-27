@@ -56,4 +56,6 @@ export interface SupplierInvoiceResponse {
     notFoundInPdfCount: number;
     qtyMismatchCount: number;
     priceMismatchCount: number;
+    batchNotFoundCount: number;
+    returnedCount: number;
 }

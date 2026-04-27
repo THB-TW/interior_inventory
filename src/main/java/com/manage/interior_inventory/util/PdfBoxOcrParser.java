@@ -61,7 +61,8 @@ public class PdfBoxOcrParser {
 
     // 跳過行（小計數字、分隔線、礦泉水★、帳款區間等）
     private static final Pattern P_SKIP = Pattern.compile(
-            "^[\\d,]+$|^-{3,}|^~{2,}|.*★{3,}|^票期|^稅金|^出貨單|收款對帳單");
+            "^[\\d,]+$|^-{3,}|^~{2,}|.*★{3,}|^票期|^稅金|^出貨單|收款對帳單" +
+                    "|出貨日期.*單號.*數量|送貨地點.*出貨日期");
 
     // 當 DB 為空時的保底清單
     private static final List<String> FALLBACK_UNITS = List.of(
@@ -141,14 +142,26 @@ public class PdfBoxOcrParser {
             String t = raw.trim();
             if (deliveryAddress == null) {
                 if (nextLineIsAddress && !t.isEmpty()) {
-                    deliveryAddress = t;
+                    boolean isTableHeader = t.contains("出貨日期")
+                            || t.contains("單號")
+                            || t.contains("計價數量");
+                    if (!isTableHeader) {
+                        deliveryAddress = t;
+                    }
                     nextLineIsAddress = false;
                 }
                 Matcher m = P_DELIVERY.matcher(t);
                 if (m.find()) {
                     String inline = m.group(1).trim();
+                    // 移除頁數資訊，例如 "頁數: 1" → ""
+                    inline = inline.replaceAll("\\s*頁數[：:]?\\s*\\d+.*$", "").trim();
+
+                    boolean isTableHeader = inline.contains("出貨日期")
+                            || inline.contains("單號")
+                            || inline.contains("計價數量")
+                            || inline.contains("出貨數量");
                     // 同行有實質內容（不只是「頁數:1」這種）
-                    if (!inline.isBlank() && !inline.matches(".*頁數.*")) {
+                    if (!inline.isBlank() && !isTableHeader) {
                         deliveryAddress = inline;
                     } else {
                         nextLineIsAddress = true; // 地址在下一行

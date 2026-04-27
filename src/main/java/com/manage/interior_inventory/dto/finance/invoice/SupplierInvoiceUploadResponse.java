@@ -20,7 +20,9 @@ public record SupplierInvoiceUploadResponse(
         int notFoundInSysCount,
         int notFoundInPdfCount,
         int qtyMismatchCount,
-        int priceMismatchCount) {
+        int priceMismatchCount,
+        int batchNotFoundCount,
+        int returnedCount) {
     public record BatchGroup(
             int batchNo, // 0 = 退貨
             LocalDate deliveryDate,

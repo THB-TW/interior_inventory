@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Upload, RefreshCw, AlertCircle, FileText, Package } from 'lucide-react'
+import { Upload, RefreshCw, AlertCircle, FileText, Package, RotateCcw } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { supplierInvoiceService } from '@/services/supplierInvoiceService'
@@ -12,14 +12,22 @@ import type { QuoteProjectUsage, QuoteMaterialLineResponse } from '@/types/quote
 
 type FilterStatus = 'ALL' | InvoiceItemMatchStatus
 
-const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
-    { value: 'ALL', label: '全部' },
-    { value: 'OK', label: '吻合' },
-    { value: 'QTY_MISMATCH', label: '數量異常' },
-    { value: 'PRICE_MISMATCH', label: '單價異常' },
-    { value: 'NOT_FOUND_IN_SYS', label: '未登錄於系統' },
-    { value: 'NOT_FOUND_IN_PDF', label: '未出現在收款對帳單' },
-]
+// ── 篩選選項：新增退貨與批次未叫貨 ──
+const FILTER_OPTIONS: {
+    value: FilterStatus
+    label: string
+    activeClass: string
+    dotClass: string
+}[] = [
+        { value: 'ALL', label: '全部', activeClass: 'bg-slate-700 text-white', dotClass: '' },
+        { value: 'OK', label: '吻合', activeClass: 'bg-emerald-600 text-white', dotClass: 'bg-emerald-500' },
+        { value: 'QTY_MISMATCH', label: '數量異常', activeClass: 'bg-red-600 text-white', dotClass: 'bg-red-500' },
+        { value: 'PRICE_MISMATCH', label: '單價異常', activeClass: 'bg-red-500 text-white', dotClass: 'bg-red-400' },
+        { value: 'NOT_FOUND_IN_SYS', label: '未登錄', activeClass: 'bg-yellow-500 text-white', dotClass: 'bg-yellow-400' },
+        { value: 'BATCH_NOT_FOUND_IN_SYS', label: '批次未叫貨', activeClass: 'bg-orange-500 text-white', dotClass: 'bg-orange-400' },
+        { value: 'NOT_FOUND_IN_PDF', label: '未出現在PDF', activeClass: 'bg-slate-500 text-white', dotClass: 'bg-slate-400' },
+        { value: 'RETURNED', label: '退貨', activeClass: 'bg-violet-600 text-white', dotClass: 'bg-violet-500' },
+    ]
 
 interface Props {
     projectId: number
@@ -30,26 +38,22 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
     const fileRef = useRef<HTMLInputElement>(null)
     const [filter, setFilter] = useState<FilterStatus>('ALL')
 
-    // ── 查詢對帳單（只取第一筆）─────────────────────────────────
     const { data: invoices = [], isLoading } = useQuery<SupplierInvoiceResponse[]>({
         queryKey: ['supplier-invoices', projectId],
         queryFn: () => supplierInvoiceService.listByProject(projectId),
     })
     const invoice: SupplierInvoiceResponse | null = invoices[0] ?? null
 
-    // ── 查詢已送出叫貨材料（複用報價頁 API）─────────────────────
     const { data: quoteUsage } = useQuery<QuoteProjectUsage[]>({
         queryKey: ['project-quote-usage', projectId],
         queryFn: () => getProjectQuoteUsage(projectId),
     })
     const projectOrderBatch = quoteUsage?.[0]?.orderBatch ?? null
     const allCaseMaterials: QuoteMaterialLineResponse[] = quoteUsage?.[0]?.quotation ?? []
-    // 只顯示已送出批次（orderBatch < 當前批次號碼）
     const confirmedMaterials = projectOrderBatch != null
         ? allCaseMaterials.filter(cm => cm.orderBatch < projectOrderBatch)
         : []
 
-    // ── 核對區分組（提到 return 前，避免 JSX 裡用 IIFE）────────
     const groupedConfirmed = confirmedMaterials.reduce<Record<number, QuoteMaterialLineResponse[]>>(
         (acc, cm) => {
             if (!acc[cm.orderBatch]) acc[cm.orderBatch] = []
@@ -61,7 +65,6 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
     const sortedBatches = Object.entries(groupedConfirmed)
         .sort(([a], [b]) => Number(a) - Number(b))
 
-    // ── 上傳 PDF ─────────────────────────────────────────────────
     const uploadMutation = useMutation({
         mutationFn: (file: File) =>
             supplierInvoiceService.uploadAndParse(projectId, file),
@@ -77,14 +80,30 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
         e.target.value = ''
     }
 
+    // 異常數量：排除退貨不算異常
     const alertCount = invoice
         ? invoice.qtyMismatchCount + invoice.priceMismatchCount + invoice.notFoundInSysCount
         : 0
 
+    // 各 status 對應的 count（供篩選按鈕顯示）
+    const getCount = (value: FilterStatus): number | null => {
+        if (!invoice || value === 'ALL') return null
+        switch (value) {
+            case 'OK': return invoice.okCount
+            case 'QTY_MISMATCH': return invoice.qtyMismatchCount
+            case 'PRICE_MISMATCH': return invoice.priceMismatchCount
+            case 'NOT_FOUND_IN_SYS': return invoice.notFoundInSysCount
+            case 'BATCH_NOT_FOUND_IN_SYS': return invoice.batchNotFoundCount ?? 0
+            case 'NOT_FOUND_IN_PDF': return invoice.notFoundInPdfCount
+            case 'RETURNED': return invoice.returnedCount ?? 0
+            default: return 0
+        }
+    }
+
     return (
         <div className="flex flex-col gap-4">
 
-            {/* ── 上傳 / 重新上傳按鈕列 ── */}
+            {/* ── 上傳按鈕列 ── */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-slate-500 text-sm">
                     <FileText size={15} />
@@ -110,7 +129,6 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                 />
             </div>
 
-            {/* ── 上傳錯誤 ── */}
             {uploadMutation.isError && (
                 <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                     <AlertCircle size={15} />
@@ -118,12 +136,10 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                 </div>
             )}
 
-            {/* ── 載入中 ── */}
             {isLoading && (
                 <div className="text-center py-12 text-slate-400 text-sm">載入中...</div>
             )}
 
-            {/* ── 無對帳單 ── */}
             {!isLoading && !invoice && (
                 <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
                     <FileText size={40} className="text-slate-300" />
@@ -131,7 +147,6 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                 </div>
             )}
 
-            {/* ── 有對帳單時顯示內容 ── */}
             {!isLoading && invoice && (
                 <div className="flex flex-col gap-5">
 
@@ -169,31 +184,42 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                         )}
                     </div>
 
-                    {/* 狀態篩選列 */}
-                    <div className="flex items-center gap-2 overflow-x-auto">
+                    {/* ── 狀態篩選列（彩色版）── */}
+                    <div className="flex items-center gap-2 flex-wrap">
                         {FILTER_OPTIONS.map(opt => {
-                            const cnt =
-                                opt.value === 'ALL' ? null :
-                                    opt.value === 'OK' ? invoice.okCount :
-                                        opt.value === 'QTY_MISMATCH' ? invoice.qtyMismatchCount :
-                                            opt.value === 'PRICE_MISMATCH' ? invoice.priceMismatchCount :
-                                                opt.value === 'NOT_FOUND_IN_SYS' ? invoice.notFoundInSysCount :
-                                                    opt.value === 'NOT_FOUND_IN_PDF' ? invoice.notFoundInPdfCount : 0
+                            const cnt = getCount(opt.value)
+                            const isActive = filter === opt.value
+                            // 沒有資料的選項 → 淡化但還是顯示
+                            const isEmpty = cnt !== null && cnt === 0
 
                             return (
                                 <button
                                     key={opt.value}
                                     onClick={() => setFilter(opt.value)}
                                     className={clsx(
-                                        'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                                        filter === opt.value
-                                            ? 'bg-[var(--color-primary)] text-white'
-                                            : 'bg-white border border-slate-200 text-slate-600 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all',
+                                        isActive
+                                            ? opt.activeClass
+                                            : clsx(
+                                                'bg-white border border-slate-200 text-slate-500 hover:border-slate-400',
+                                                isEmpty && 'opacity-40'
+                                            )
                                     )}
                                 >
+                                    {/* 未啟用時顯示對應顏色小圓點 */}
+                                    {!isActive && opt.dotClass && (
+                                        <span className={clsx('w-1.5 h-1.5 rounded-full', opt.dotClass)} />
+                                    )}
                                     {opt.label}
-                                    {cnt != null && cnt > 0 && (
-                                        <span className="ml-1 opacity-70">({cnt})</span>
+                                    {cnt !== null && cnt > 0 && (
+                                        <span className={clsx(
+                                            'px-1.5 py-0.5 rounded-full text-xs font-bold',
+                                            isActive
+                                                ? 'bg-white/25 text-white'
+                                                : 'bg-slate-100 text-slate-600'
+                                        )}>
+                                            {cnt}
+                                        </span>
                                     )}
                                 </button>
                             )
@@ -203,9 +229,12 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                     {/* ── PDF 批次分組表格 ── */}
                     <div className="flex flex-col gap-5">
                         {invoice.batches.map(batch => {
+                            const isReturnBatch = batch.batchNo === 0
+                            const isMissingBatch = batch.batchNo === -1
+
                             const batchLabel =
-                                batch.batchNo === 0 ? '退貨'
-                                    : batch.batchNo === -1 ? '未出現（系統有，PDF 無）'
+                                isReturnBatch ? '退貨'
+                                    : isMissingBatch ? '未出現（系統有，PDF 無）'
                                         : `第 ${batch.batchNo} 批`
 
                             const dateLabel = batch.deliveryDate
@@ -221,19 +250,39 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                             return (
                                 <div
                                     key={batch.batchNo}
-                                    className="rounded-xl border border-slate-200 overflow-hidden shadow-sm"
+                                    className={clsx(
+                                        'rounded-xl border overflow-hidden shadow-sm',
+                                        isReturnBatch ? 'border-violet-200' :
+                                            isMissingBatch ? 'border-slate-200 opacity-60' :
+                                                'border-slate-200'
+                                    )}
                                 >
-                                    <div className="flex items-center gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100">
+                                    {/* 批次 Header */}
+                                    <div className={clsx(
+                                        'flex items-center gap-3 px-5 py-3 border-b',
+                                        isReturnBatch ? 'bg-violet-50 border-violet-100' :
+                                            isMissingBatch ? 'bg-slate-50 border-slate-100' :
+                                                'bg-slate-50 border-slate-100'
+                                    )}>
+                                        {/* 退貨批次加上 icon */}
+                                        {isReturnBatch && (
+                                            <RotateCcw size={14} className="text-violet-500 shrink-0" />
+                                        )}
                                         <span className={clsx(
                                             'text-sm font-semibold',
-                                            batch.batchNo === 0 ? 'text-orange-600'
-                                                : batch.batchNo === -1 ? 'text-slate-400'
-                                                    : 'text-slate-700'
+                                            isReturnBatch ? 'text-violet-700' :
+                                                isMissingBatch ? 'text-slate-400' :
+                                                    'text-slate-700'
                                         )}>
                                             {batchLabel}
                                         </span>
                                         {dateLabel && (
-                                            <span className="text-xs text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full">
+                                            <span className={clsx(
+                                                'text-xs px-2 py-0.5 rounded-full border',
+                                                isReturnBatch
+                                                    ? 'bg-white border-violet-200 text-violet-500'
+                                                    : 'bg-white border-slate-200 text-slate-400'
+                                            )}>
                                                 {dateLabel}
                                             </span>
                                         )}
@@ -259,8 +308,15 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                                                     <tr
                                                         key={it.itemId}
                                                         className={clsx(
-                                                            'border-b border-slate-50 hover:bg-slate-50 transition-colors',
-                                                            it.matchStatus === 'NOT_FOUND_IN_PDF' && 'opacity-40'
+                                                            'border-b border-slate-50 transition-colors',
+                                                            it.matchStatus === 'NOT_FOUND_IN_PDF' && 'opacity-40 bg-slate-50',
+                                                            it.matchStatus === 'RETURNED' && 'bg-violet-50/40 hover:bg-violet-50',
+                                                            it.matchStatus === 'QTY_MISMATCH' && 'bg-red-50/40 hover:bg-red-50',
+                                                            it.matchStatus === 'PRICE_MISMATCH' && 'bg-red-50/40 hover:bg-red-50',
+                                                            it.matchStatus === 'BATCH_NOT_FOUND_IN_SYS' && 'bg-orange-50/40 hover:bg-orange-50',
+                                                            it.matchStatus === 'NOT_FOUND_IN_SYS' && 'bg-yellow-50/40 hover:bg-yellow-50',
+                                                            !['NOT_FOUND_IN_PDF', 'RETURNED', 'QTY_MISMATCH', 'PRICE_MISMATCH', 'BATCH_NOT_FOUND_IN_SYS', 'NOT_FOUND_IN_SYS'].includes(it.matchStatus)
+                                                            && 'hover:bg-slate-50'
                                                         )}
                                                     >
                                                         <td className="px-4 py-3 text-slate-800 font-medium max-w-xs truncate">
@@ -294,7 +350,6 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                             )
                         })}
 
-                        {/* 篩選後全部為空 */}
                         {filter !== 'ALL' && invoice.batches.every(b =>
                             b.items.every(it => it.matchStatus !== filter)
                         ) && (
@@ -304,10 +359,9 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                             )}
                     </div>
 
-                    {/* ── 系統已送出材料核對區 ── */}
+                    {/* ── 系統已送出材料核對區（不變）── */}
                     {confirmedMaterials.length > 0 && (
                         <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
-
                             <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
                                 <Package size={15} />
                                 <span>系統登錄材料（供人工核對）</span>
@@ -321,10 +375,7 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                                     (sum, it) => sum + (it.lineCost ?? 0), 0
                                 )
                                 return (
-                                    <div
-                                        key={batch}
-                                        className="rounded-xl border border-slate-200 overflow-hidden shadow-sm"
-                                    >
+                                    <div key={batch} className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                                         <div className="flex items-center gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100">
                                             <span className="text-sm font-semibold text-slate-700">
                                                 第 {batch} 批叫貨
@@ -338,7 +389,6 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                                                 </span>
                                             )}
                                         </div>
-
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm">
                                                 <thead>
@@ -358,40 +408,28 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                                                             key={cm.caseMaterialId}
                                                             className={clsx(
                                                                 'border-b border-slate-50 hover:bg-slate-50 transition-colors',
-                                                                cm.materialType === 'RETURN' && 'opacity-50'
+                                                                cm.materialType === 'RETURN' && 'bg-violet-50/40 opacity-60'
                                                             )}
                                                         >
-                                                            <td className="px-4 py-3 text-slate-800 font-medium">
-                                                                {cm.materialName}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-slate-500 text-xs">
-                                                                {cm.materialSpec || '—'}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-center text-slate-500 text-xs">
-                                                                {cm.materialUnit || '—'}
-                                                            </td>
+                                                            <td className="px-4 py-3 text-slate-800 font-medium">{cm.materialName}</td>
+                                                            <td className="px-4 py-3 text-slate-500 text-xs">{cm.materialSpec || '—'}</td>
+                                                            <td className="px-4 py-3 text-center text-slate-500 text-xs">{cm.materialUnit || '—'}</td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <span className={clsx(
                                                                     'px-2 py-0.5 rounded-full text-xs font-medium',
                                                                     cm.materialType === 'PURCHASE' && 'bg-blue-50 text-blue-600',
                                                                     cm.materialType === 'LEFTOVER' && 'bg-amber-50 text-amber-600',
-                                                                    cm.materialType === 'RETURN' && 'bg-red-50 text-red-500',
+                                                                    cm.materialType === 'RETURN' && 'bg-violet-50 text-violet-600',
                                                                 )}>
                                                                     {CASE_MATERIAL_TYPE_LABELS[cm.materialType]}
                                                                 </span>
                                                             </td>
+                                                            <td className="px-4 py-3 text-right font-mono text-slate-700">{cm.quantity}</td>
                                                             <td className="px-4 py-3 text-right font-mono text-slate-700">
-                                                                {cm.quantity}
+                                                                {cm.unitPrice != null ? `$${cm.unitPrice.toLocaleString()}` : '—'}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono text-slate-700">
-                                                                {cm.unitPrice != null
-                                                                    ? `$${cm.unitPrice.toLocaleString()}`
-                                                                    : '—'}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-right font-mono text-slate-700">
-                                                                {cm.lineCost != null
-                                                                    ? `$${cm.lineCost.toLocaleString()}`
-                                                                    : '—'}
+                                                                {cm.lineCost != null ? `$${cm.lineCost.toLocaleString()}` : '—'}
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -403,10 +441,8 @@ export default function SupplierInvoiceTab({ projectId }: Props) {
                             })}
                         </div>
                     )}
-
                 </div>
             )}
-
         </div>
     )
 }
