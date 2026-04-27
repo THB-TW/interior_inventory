@@ -32,6 +32,7 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
     private final SupplierInvoiceRepository invoiceRepository;
     private final ProjectRepository projectRepository;
     private final CaseMaterialRepository caseMaterialRepository;
+    private final MaterialRepository materialRepository;
 
     @Value("${app.upload.invoice-dir:uploads/invoices}")
     private String uploadDir;
@@ -49,13 +50,22 @@ public class SupplierInvoiceServiceImpl implements SupplierInvoiceService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Project not found: " + projectId));
 
+        // 0. 若此案件已有對帳單，先刪舊的（一案只保一筆）
+        List<SupplierInvoice> existing = invoiceRepository.findByProject_IdOrderByCreatedAtDesc(projectId);
+        if (!existing.isEmpty()) {
+            invoiceRepository.deleteAll(existing);
+            invoiceRepository.flush(); // 確保刪除先 commit，避免 unique 衝突
+        }
+
         // 1. 存 PDF 實體檔案
         String pdfPath = saveFile(projectId, file);
 
         // 2. 解析 PDF
         ParseResult pr;
         try {
-            pr = PdfBoxOcrParser.parse(file.getBytes());
+            List<String> knownUnits = materialRepository.findAllDistinctUnits();
+            log.debug("[SupplierInvoice] 動態單位清單 ({} 種): {}", knownUnits.size(), knownUnits);
+            pr = PdfBoxOcrParser.parse(file.getBytes(), knownUnits);
         } catch (IOException e) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "無法讀取 PDF 檔案", e);

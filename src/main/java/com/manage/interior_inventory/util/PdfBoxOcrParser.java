@@ -54,20 +54,35 @@ public class PdfBoxOcrParser {
     // e.g. "115/02/09 115020185"
     private static final Pattern P_BATCH_HEADER = Pattern.compile("^(\\d{3}/\\d{2}/\\d{2})\\s+(\\d{5,})");
 
-    // 品項行：材料名稱 數量+單位 單價 金額
-    // 支援常見建材單位
-    private static final Pattern P_ITEM = Pattern.compile(
-            "^(退\\s+)?(.+?)\\s+" +
-                    "(-?\\d+(?:\\.\\d+)?)" +
-                    "(支|片|箱|才|組|包|桶|條|塊|式|坪|張|個|捲|套|m²|㎡)" +
-                    "\\s+(-?[\\d,]+(?:\\.\\d+)?)\\s+(-?[\\d,]+)$");
-
     // 退貨區段標記
     private static final Pattern P_RETURN_SECTION = Pattern.compile(".*以下退回收退料.*");
 
     // 跳過行（小計數字、分隔線、礦泉水★、帳款區間等）
     private static final Pattern P_SKIP = Pattern.compile(
             "^[\\d,]+$|^-{3,}|^~{2,}|.*★{3,}|^票期|^稅金|^出貨單|收款對帳單");
+
+    // 當 DB 為空時的保底清單
+    private static final List<String> FALLBACK_UNITS = List.of(
+            "支", "片", "箱", "才", "組", "包", "桶", "條", "塊", "式",
+            "坪", "張", "個", "捲", "套", "m²", "㎡", "m", "尺", "塊");
+
+    public static Pattern buildItemPattern(Collection<String> units) {
+        Set<String> merged = new LinkedHashSet<>(units);
+        merged.addAll(FALLBACK_UNITS);
+
+        String unitGroup = merged.stream()
+                .filter(u -> u != null && !u.isBlank())
+                .sorted(Comparator.comparingInt(String::length).reversed()) // 長的先，避免 m² 被 m 截斷
+                .map(Pattern::quote) // 安全 escape 特殊字元
+                .reduce((a, b) -> a + "|" + b)
+                .orElse("支|片|箱|才|組|包|桶|條|塊|式|坪|張|個|捲|套");
+
+        return Pattern.compile(
+                "^(退\\s+)?(.+?)\\s+" +
+                        "(-?\\d+(?:\\.\\d+)?)" +
+                        "(" + unitGroup + ")" +
+                        "\\s+(-?[\\d,]+(?:\\.\\d+)?)\\s+(-?[\\d,]+)$");
+    }
 
     // ── 工具：民國年 → LocalDate ──────────────────────────────────────
 
@@ -88,13 +103,13 @@ public class PdfBoxOcrParser {
 
     // ── 主入口 ────────────────────────────────────────────────────────
 
-    public static ParseResult parse(byte[] pdfBytes) {
+    public static ParseResult parse(byte[] pdfBytes, Collection<String> knownUnits) {
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
             String text = new PDFTextStripper().getText(doc);
             if (text == null || text.isBlank())
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "無法解析此 PDF，請確認為文字型 PDF");
-            return parseText(text);
+            return parseText(text, knownUnits);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
@@ -105,7 +120,8 @@ public class PdfBoxOcrParser {
     }
 
     /** 純文字入口，方便單元測試 */
-    public static ParseResult parseText(String text) {
+    public static ParseResult parseText(String text, Collection<String> knownUnits) {
+        Pattern pItem = buildItemPattern(knownUnits == null ? List.of() : knownUnits);
         String[] lines = text.split("\\r?\\n");
 
         // ── Phase 1：Header（掃全文，找到即記錄）────────────────────
@@ -166,7 +182,7 @@ public class PdfBoxOcrParser {
             }
 
             // 品項行
-            Matcher im = P_ITEM.matcher(t);
+            Matcher im = pItem.matcher(t); // P_ITEM → pItem
             if (!im.matches())
                 continue;
 
