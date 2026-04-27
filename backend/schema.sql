@@ -127,40 +127,71 @@ CREATE TABLE case_materials (
 CREATE INDEX idx_case_materials_case ON case_materials (case_id);
 CREATE INDEX idx_case_materials_material ON case_materials (material_id);
 
--- === 建材商對帳單 header ===
+-- =============================================
+-- 建材商收款對帳單 header
+-- =============================================
 CREATE TABLE supplier_invoices (
-    id             BIGSERIAL PRIMARY KEY,
-    supplier_name  VARCHAR(100) NOT NULL,
-    invoice_number VARCHAR(50)  NOT NULL,
-    invoice_date   DATE         NOT NULL,
-    total_amount   NUMERIC(10,2),
-    created_at     TIMESTAMP    NOT NULL DEFAULT NOW()
+    id                  BIGSERIAL       PRIMARY KEY,
+    project_id          BIGINT          NOT NULL,
+    pdf_path            VARCHAR(255),
+    delivery_address    VARCHAR(255),               -- 送貨地點（核對案件地址）
+    receivable_amount   NUMERIC(10,2),              -- 應收總額
+    cash_discount       NUMERIC(10,2),              -- 現金扣款4%
+    net_payable         NUMERIC(10,2),              -- 付現應收
+    created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_supplier_invoices_project
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX uidx_supplier_invoice
-    ON supplier_invoices (supplier_name, invoice_number);
+CREATE INDEX idx_supplier_invoices_project
+    ON supplier_invoices(project_id);
 
--- === 建材商對帳單明細 ===
+
+-- =============================================
+-- 建材商對帳單明細
+-- =============================================
 CREATE TABLE supplier_invoice_items (
-    id                  BIGSERIAL PRIMARY KEY,
-    supplier_invoice_id BIGINT       NOT NULL,
-    material_id         BIGINT,
-    description         VARCHAR(255) NOT NULL,
-    shipped_quantity    INTEGER      NOT NULL,
-    billed_quantity     INTEGER,
-    unit_price          NUMERIC(10,2) NOT NULL,
-    line_amount         NUMERIC(10,2),
-    is_return           BOOLEAN      NOT NULL DEFAULT FALSE,
-    CONSTRAINT fk_items_invoice
-        FOREIGN KEY (supplier_invoice_id) REFERENCES supplier_invoices (id),
-    CONSTRAINT fk_items_material
-        FOREIGN KEY (material_id) REFERENCES materials (id)
+    id                      BIGSERIAL       PRIMARY KEY,
+    supplier_invoice_id     BIGINT          NOT NULL,
+    batch_no                INTEGER         NOT NULL, -- 批次資訊
+    -- 1 = 第一批進貨, 2 = 第二批...
+    -- 0 = 退貨（"以下退回收退料" 之後的行）
+    delivery_date           DATE,                   -- 出貨日期（民國年轉西元）
+
+    -- 材料資訊
+    material_id             BIGINT,                 -- FK → materials(id)，nullable（OCR 比對不到時為 null）
+    material_name_raw       VARCHAR(150)    NOT NULL, -- PDF 原始材料名稱（保留備查）
+    unit                    VARCHAR(20)     NOT NULL,
+    quantity                NUMERIC(10,2)   NOT NULL, -- 計價數量（退貨為負值）
+    unit_price              NUMERIC(10,2),            -- 單價（nullable）
+    total_price             NUMERIC(10,2),            -- 金額（退貨為負值）
+
+    -- 比對狀態
+   match_status    VARCHAR(30)     NOT NULL,
+	-- OK                → 核對成功
+	-- NOT_FOUND_IN_SYS  → PDF有但系統無此材料
+	-- NOT_FOUND_IN_PDF  → PDF沒有但系統有此材料
+	-- QTY_MISMATCH      → 數量不對
+	-- PRICE_MISMATCH    → 單價不對）
+
+    CONSTRAINT fk_invoice_items_invoice
+        FOREIGN KEY (supplier_invoice_id)
+            REFERENCES supplier_invoices(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_invoice_items_material
+        FOREIGN KEY (material_id)
+            REFERENCES materials(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_supplier_items_invoice
-    ON supplier_invoice_items (supplier_invoice_id);
-CREATE INDEX idx_supplier_items_material
-    ON supplier_invoice_items (material_id);
+CREATE INDEX idx_invoice_items_invoice
+    ON supplier_invoice_items(supplier_invoice_id);
+
+CREATE INDEX idx_invoice_items_batch
+    ON supplier_invoice_items(supplier_invoice_id, batch_no);
+
+CREATE INDEX idx_invoice_items_material
+    ON supplier_invoice_items(material_id);
 
 -- === 師傅名單 ===
 CREATE TABLE workers (

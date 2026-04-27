@@ -8,6 +8,7 @@ import InventoryPage from '@/pages/inventory/InventoryPage';
 import QuoteOverviewPage from '@/pages/quotes/QuoteOverviewPage';
 import FinancePage from '@/pages/finance/FinancePage';
 import SalaryPage from '@/pages/finance/SalaryPage';
+import SupplierInvoicePage from '@/pages/finance/SupplierInvoicePage';
 import WorkerOverviewPage from '@/pages/workers/WorkerOverviewPage';
 import WorkerReportPage from '@/pages/workers/WorkerReportPage';
 import PlaceholderPage from '@/components/common/PlaceholderPage';
@@ -29,7 +30,7 @@ const router = createBrowserRouter([
           { index: true, element: <Navigate to="profit" replace /> },
           { path: 'profit', element: <FinancePage /> },
           { path: 'salary', element: <SalaryPage /> },
-          { path: 'invoices', element: <PlaceholderPage title="建材商對帳" /> },
+          { path: 'invoices', element: <SupplierInvoicePage /> },
         ],
       },
       { path: 'workers', element: <WorkerOverviewPage /> },

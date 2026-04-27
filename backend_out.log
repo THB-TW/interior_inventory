@@ -1,0 +1,568 @@
+[INFO] Scanning for projects...
+[INFO]
+[INFO] -------------------< com.manage:interior-inventory >--------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- clean:3.4.1:clean (default-clean) @ interior-inventory ---
+[INFO] Deleting /app/target
+[INFO]
+[INFO] >>> spring-boot:3.5.13:run (default-cli) > test-compile @ interior-inventory >>>
+[INFO]
+[INFO] --- resources:3.3.1:resources (default-resources) @ interior-inventory ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.14.1:compile (default-compile) @ interior-inventory ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 108 source files with javac [debug parameters release 21] to target/classes
+[INFO]
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ interior-inventory ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO]
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ interior-inventory ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target/test-classes
+[INFO]
+[INFO] <<< spring-boot:3.5.13:run (default-cli) < test-compile @ interior-inventory <<<
+[INFO]
+[INFO]
+[INFO] --- spring-boot:3.5.13:run (default-cli) @ interior-inventory ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.13)
+
+2026-04-25T05:12:09.346Z  INFO 168020 --- [interior-inventory] [           main] c.m.i.InteriorInventoryApplication       : Starting InteriorInventoryApplication using Java 21.0.10 with PID 168020 (/app/target/classes started by jules in /app)
+2026-04-25T05:12:09.351Z  INFO 168020 --- [interior-inventory] [           main] c.m.i.InteriorInventoryApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-04-25T05:12:11.144Z  INFO 168020 --- [interior-inventory] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-25T05:12:11.294Z  INFO 168020 --- [interior-inventory] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 131 ms. Found 12 JPA repository interfaces.
+2026-04-25T05:12:12.291Z  INFO 168020 --- [interior-inventory] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-04-25T05:12:12.320Z  INFO 168020 --- [interior-inventory] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-25T05:12:12.320Z  INFO 168020 --- [interior-inventory] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+2026-04-25T05:12:12.396Z  INFO 168020 --- [interior-inventory] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-25T05:12:12.398Z  INFO 168020 --- [interior-inventory] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2953 ms
+2026-04-25T05:12:12.620Z  INFO 168020 --- [interior-inventory] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-25T05:12:12.684Z  INFO 168020 --- [interior-inventory] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.45.Final
+2026-04-25T05:12:12.731Z  INFO 168020 --- [interior-inventory] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-25T05:12:13.164Z  INFO 168020 --- [interior-inventory] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-25T05:12:13.213Z  INFO 168020 --- [interior-inventory] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-25T05:12:13.500Z  INFO 168020 --- [interior-inventory] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=ORDER_USER
+2026-04-25T05:12:13.503Z  INFO 168020 --- [interior-inventory] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-25T05:12:13.595Z  INFO 168020 --- [interior-inventory] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-25T05:12:15.143Z  INFO 168020 --- [interior-inventory] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-25T05:12:15.243Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table case_materials (
+        id bigint generated by default as identity,
+        created_at timestamp(6) not null,
+        line_cost numeric(10,2),
+        material_type enum ('LEFTOVER','PURCHASE','RETURN') not null,
+        order_batch integer not null,
+        quantity integer not null,
+        unit_price numeric(10,2),
+        material_id bigint not null,
+        case_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table case_materials (
+        id bigint generated by default as identity,
+        created_at timestamp(6) not null,
+        line_cost numeric(10,2),
+        material_type enum ('LEFTOVER','PURCHASE','RETURN') not null,
+        order_batch integer not null,
+        quantity integer not null,
+        unit_price numeric(10,2),
+        material_id bigint not null,
+        case_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.259Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table case_workers (
+        id bigint generated by default as identity,
+        daily_wage numeric(38,2) not null,
+        days_worked numeric(3,1) not null,
+        travel_expenses numeric(38,2) not null,
+        workday date not null,
+        case_id bigint not null,
+        worker_id bigint,
+        primary key (id)
+    )
+Hibernate:
+    create table case_workers (
+        id bigint generated by default as identity,
+        daily_wage numeric(38,2) not null,
+        days_worked numeric(3,1) not null,
+        travel_expenses numeric(38,2) not null,
+        workday date not null,
+        case_id bigint not null,
+        worker_id bigint,
+        primary key (id)
+    )
+2026-04-25T05:12:15.262Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table customer_inquiry (
+        id bigint generated by default as identity,
+        address varchar(255),
+        created_at timestamp(6),
+        line_user_id varchar(255) not null,
+        line_user_name varchar(100),
+        message TEXT not null,
+        name varchar(100),
+        phone varchar(30),
+        status enum ('CLOSED','PENDING','PROCESSING') not null,
+        work_content TEXT,
+        primary key (id)
+    )
+Hibernate:
+    create table customer_inquiry (
+        id bigint generated by default as identity,
+        address varchar(255),
+        created_at timestamp(6),
+        line_user_id varchar(255) not null,
+        line_user_name varchar(100),
+        message TEXT not null,
+        name varchar(100),
+        phone varchar(30),
+        status enum ('CLOSED','PENDING','PROCESSING') not null,
+        work_content TEXT,
+        primary key (id)
+    )
+2026-04-25T05:12:15.264Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table estimation_items (
+        id bigint generated by default as identity,
+        material_name varchar(100) not null,
+        quantity integer not null,
+        subtotal integer not null,
+        unit_price integer not null,
+        estimation_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table estimation_items (
+        id bigint generated by default as identity,
+        material_name varchar(100) not null,
+        quantity integer not null,
+        subtotal integer not null,
+        unit_price integer not null,
+        estimation_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.266Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table estimation_worker_items (
+        id bigint generated by default as identity,
+        days numeric(5,2) not null,
+        subtotal integer not null,
+        worker_id bigint not null,
+        estimation_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table estimation_worker_items (
+        id bigint generated by default as identity,
+        days numeric(5,2) not null,
+        subtotal integer not null,
+        worker_id bigint not null,
+        estimation_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.267Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table materials (
+        id bigint generated by default as identity,
+        created_at timestamp(6) not null,
+        default_price numeric(10,2),
+        description TEXT,
+        is_active boolean not null,
+        name varchar(100) not null,
+        unit varchar(20) not null,
+        primary key (id)
+    )
+Hibernate:
+    create table materials (
+        id bigint generated by default as identity,
+        created_at timestamp(6) not null,
+        default_price numeric(10,2),
+        description TEXT,
+        is_active boolean not null,
+        name varchar(100) not null,
+        unit varchar(20) not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.269Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table project_estimations (
+        id bigint generated by default as identity,
+        created_at timestamp(6),
+        labor_cost integer not null,
+        profit integer not null,
+        project_id bigint not null,
+        total_amount integer not null,
+        updated_at timestamp(6),
+        primary key (id)
+    )
+Hibernate:
+    create table project_estimations (
+        id bigint generated by default as identity,
+        created_at timestamp(6),
+        labor_cost integer not null,
+        profit integer not null,
+        project_id bigint not null,
+        total_amount integer not null,
+        updated_at timestamp(6),
+        primary key (id)
+    )
+2026-04-25T05:12:15.271Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table projects (
+        id bigint generated by default as identity,
+        city varchar(30) not null,
+        client_name varchar(100) not null,
+        client_phone varchar(30),
+        contract_amount numeric(10,2),
+        created_at timestamp(6),
+        description TEXT,
+        district varchar(30),
+        estimated_days integer,
+        order_batch integer,
+        payment_status varchar(20),
+        project_code varchar(30) not null,
+        received_amount numeric(10,2),
+        sales_user_id bigint not null,
+        site_address varchar(255) not null,
+        status enum ('CANCELLED','CLOSED','CONFIRMED','INQUIRY','INSPECTION','IN_PROGRESS','QUOTING') not null,
+        updated_at timestamp(6),
+        primary key (id)
+    )
+Hibernate:
+    create table projects (
+        id bigint generated by default as identity,
+        city varchar(30) not null,
+        client_name varchar(100) not null,
+        client_phone varchar(30),
+        contract_amount numeric(10,2),
+        created_at timestamp(6),
+        description TEXT,
+        district varchar(30),
+        estimated_days integer,
+        order_batch integer,
+        payment_status varchar(20),
+        project_code varchar(30) not null,
+        received_amount numeric(10,2),
+        sales_user_id bigint not null,
+        site_address varchar(255) not null,
+        status enum ('CANCELLED','CLOSED','CONFIRMED','INQUIRY','INSPECTION','IN_PROGRESS','QUOTING') not null,
+        updated_at timestamp(6),
+        primary key (id)
+    )
+2026-04-25T05:12:15.273Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table supplier_invoice_items (
+        id bigint generated by default as identity,
+        case_material_id bigint,
+        is_return boolean not null,
+        match_status enum ('NOT_FOUND','OK','PRICE_MISMATCH','QTY_MISMATCH') not null,
+        material_name varchar(100) not null,
+        quantity numeric(10,2),
+        specification varchar(100),
+        total_price numeric(10,2),
+        unit varchar(20) not null,
+        unit_price numeric(10,2),
+        supplier_invoice_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table supplier_invoice_items (
+        id bigint generated by default as identity,
+        case_material_id bigint,
+        is_return boolean not null,
+        match_status enum ('NOT_FOUND','OK','PRICE_MISMATCH','QTY_MISMATCH') not null,
+        material_name varchar(100) not null,
+        quantity numeric(10,2),
+        specification varchar(100),
+        total_price numeric(10,2),
+        unit varchar(20) not null,
+        unit_price numeric(10,2),
+        supplier_invoice_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.275Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table supplier_invoices (
+        id bigint generated by default as identity,
+        confirmed_at timestamp(6),
+        invoice_date date not null,
+        invoice_number varchar(50) not null,
+        pdf_path varchar(255),
+        status enum ('CONFIRMED','PENDING_REVIEW') not null,
+        supplier_name varchar(100) not null,
+        total_amount numeric(10,2),
+        uploaded_at timestamp(6) not null,
+        project_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table supplier_invoices (
+        id bigint generated by default as identity,
+        confirmed_at timestamp(6),
+        invoice_date date not null,
+        invoice_number varchar(50) not null,
+        pdf_path varchar(255),
+        status enum ('CONFIRMED','PENDING_REVIEW') not null,
+        supplier_name varchar(100) not null,
+        total_amount numeric(10,2),
+        uploaded_at timestamp(6) not null,
+        project_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.276Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table warehouse_inventory (
+        id bigint generated by default as identity,
+        location varchar(50),
+        quantity integer not null,
+        remarks varchar(255),
+        status enum ('AVAILABLE','RESERVED','STORAGE') not null,
+        updated_at timestamp(6) not null,
+        material_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table warehouse_inventory (
+        id bigint generated by default as identity,
+        location varchar(50),
+        quantity integer not null,
+        remarks varchar(255),
+        status enum ('AVAILABLE','RESERVED','STORAGE') not null,
+        updated_at timestamp(6) not null,
+        material_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.278Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table worker_salary_items (
+        id bigint generated by default as identity,
+        adjustment numeric(10,2) not null,
+        base_amount numeric(10,2) not null,
+        created_at timestamp(6) not null,
+        final_amount numeric(10,2) not null,
+        is_paid boolean not null,
+        note TEXT,
+        paid_at timestamp(6),
+        travel_expenses numeric(10,2) not null,
+        wage_type varchar(20) not null,
+        period_id bigint,
+        project_id bigint,
+        worker_id bigint not null,
+        primary key (id)
+    )
+Hibernate:
+    create table worker_salary_items (
+        id bigint generated by default as identity,
+        adjustment numeric(10,2) not null,
+        base_amount numeric(10,2) not null,
+        created_at timestamp(6) not null,
+        final_amount numeric(10,2) not null,
+        is_paid boolean not null,
+        note TEXT,
+        paid_at timestamp(6),
+        travel_expenses numeric(10,2) not null,
+        wage_type varchar(20) not null,
+        period_id bigint,
+        project_id bigint,
+        worker_id bigint not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.282Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table worker_salary_periods (
+        id bigint generated by default as identity,
+        created_at timestamp(6) not null,
+        label varchar(50) not null,
+        period_end date not null,
+        period_start date not null,
+        status varchar(20) not null,
+        primary key (id)
+    )
+Hibernate:
+    create table worker_salary_periods (
+        id bigint generated by default as identity,
+        created_at timestamp(6) not null,
+        label varchar(50) not null,
+        period_end date not null,
+        period_start date not null,
+        status varchar(20) not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.283Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    create table workers (
+        id bigint generated by default as identity,
+        daily_wage integer not null,
+        nickname varchar(50) not null,
+        share_rate numeric(5,4),
+        wage_type varchar(20) not null,
+        primary key (id)
+    )
+Hibernate:
+    create table workers (
+        id bigint generated by default as identity,
+        daily_wage integer not null,
+        nickname varchar(50) not null,
+        share_rate numeric(5,4),
+        wage_type varchar(20) not null,
+        primary key (id)
+    )
+2026-04-25T05:12:15.286Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists project_estimations
+       drop constraint if exists UK4y82k2eyajvoo4p721mg1q3ub
+Hibernate:
+    alter table if exists project_estimations
+       drop constraint if exists UK4y82k2eyajvoo4p721mg1q3ub
+2026-04-25T05:12:15.287Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists project_estimations
+       add constraint UK4y82k2eyajvoo4p721mg1q3ub unique (project_id)
+Hibernate:
+    alter table if exists project_estimations
+       add constraint UK4y82k2eyajvoo4p721mg1q3ub unique (project_id)
+2026-04-25T05:12:15.290Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists projects
+       drop constraint if exists UK1batb7mq0elcfcs3d6maqo6sg
+Hibernate:
+    alter table if exists projects
+       drop constraint if exists UK1batb7mq0elcfcs3d6maqo6sg
+2026-04-25T05:12:15.291Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists projects
+       add constraint UK1batb7mq0elcfcs3d6maqo6sg unique (project_code)
+Hibernate:
+    alter table if exists projects
+       add constraint UK1batb7mq0elcfcs3d6maqo6sg unique (project_code)
+2026-04-25T05:12:15.292Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists case_materials
+       add constraint FK3uhvssj1ivd97hi5l607luvtt
+       foreign key (material_id)
+       references materials
+Hibernate:
+    alter table if exists case_materials
+       add constraint FK3uhvssj1ivd97hi5l607luvtt
+       foreign key (material_id)
+       references materials
+2026-04-25T05:12:15.301Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists case_materials
+       add constraint FKqwipexthf3ixgo09mw7t7ec8c
+       foreign key (case_id)
+       references projects
+Hibernate:
+    alter table if exists case_materials
+       add constraint FKqwipexthf3ixgo09mw7t7ec8c
+       foreign key (case_id)
+       references projects
+2026-04-25T05:12:15.303Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists case_workers
+       add constraint FKsx194bqdwxdx293aog3w7a32o
+       foreign key (case_id)
+       references projects
+Hibernate:
+    alter table if exists case_workers
+       add constraint FKsx194bqdwxdx293aog3w7a32o
+       foreign key (case_id)
+       references projects
+2026-04-25T05:12:15.306Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists case_workers
+       add constraint FKhe8w6foo38ue0yvuol1flurfd
+       foreign key (worker_id)
+       references workers
+Hibernate:
+    alter table if exists case_workers
+       add constraint FKhe8w6foo38ue0yvuol1flurfd
+       foreign key (worker_id)
+       references workers
+2026-04-25T05:12:15.309Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists estimation_items
+       add constraint FKb674a3ace2ofh1740suqc87wx
+       foreign key (estimation_id)
+       references project_estimations
+Hibernate:
+    alter table if exists estimation_items
+       add constraint FKb674a3ace2ofh1740suqc87wx
+       foreign key (estimation_id)
+       references project_estimations
+2026-04-25T05:12:15.312Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists estimation_worker_items
+       add constraint FKfj8jei7b39ov01qe5rck1s12e
+       foreign key (estimation_id)
+       references project_estimations
+Hibernate:
+    alter table if exists estimation_worker_items
+       add constraint FKfj8jei7b39ov01qe5rck1s12e
+       foreign key (estimation_id)
+       references project_estimations
+2026-04-25T05:12:15.315Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists supplier_invoice_items
+       add constraint FK459yjrd9uvita2jahnymoo16u
+       foreign key (supplier_invoice_id)
+       references supplier_invoices
+Hibernate:
+    alter table if exists supplier_invoice_items
+       add constraint FK459yjrd9uvita2jahnymoo16u
+       foreign key (supplier_invoice_id)
+       references supplier_invoices
+2026-04-25T05:12:15.316Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists supplier_invoices
+       add constraint FK1egkc7rh7ghog81x5yanspkx3
+       foreign key (project_id)
+       references projects
+Hibernate:
+    alter table if exists supplier_invoices
+       add constraint FK1egkc7rh7ghog81x5yanspkx3
+       foreign key (project_id)
+       references projects
+2026-04-25T05:12:15.319Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists warehouse_inventory
+       add constraint FKb333qkgxxu6g7hyvghy7khst8
+       foreign key (material_id)
+       references materials
+Hibernate:
+    alter table if exists warehouse_inventory
+       add constraint FKb333qkgxxu6g7hyvghy7khst8
+       foreign key (material_id)
+       references materials
+2026-04-25T05:12:15.320Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists worker_salary_items
+       add constraint FKcst12uufkmkido9uxug87p05a
+       foreign key (period_id)
+       references worker_salary_periods
+Hibernate:
+    alter table if exists worker_salary_items
+       add constraint FKcst12uufkmkido9uxug87p05a
+       foreign key (period_id)
+       references worker_salary_periods
+2026-04-25T05:12:15.322Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists worker_salary_items
+       add constraint FKe7s392yd6h8jj55tv7mc9swk9
+       foreign key (project_id)
+       references projects
+Hibernate:
+    alter table if exists worker_salary_items
+       add constraint FKe7s392yd6h8jj55tv7mc9swk9
+       foreign key (project_id)
+       references projects
+2026-04-25T05:12:15.324Z DEBUG 168020 --- [interior-inventory] [           main] org.hibernate.SQL                        :
+    alter table if exists worker_salary_items
+       add constraint FKj9echs8g6hpu0h9ji0ktwisd4
+       foreign key (worker_id)
+       references workers
+Hibernate:
+    alter table if exists worker_salary_items
+       add constraint FKj9echs8g6hpu0h9ji0ktwisd4
+       foreign key (worker_id)
+       references workers
+2026-04-25T05:12:15.332Z  INFO 168020 --- [interior-inventory] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-25T05:12:15.805Z  INFO 168020 --- [interior-inventory] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-25T05:12:17.798Z  WARN 168020 --- [interior-inventory] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-25T05:12:18.578Z  INFO 168020 --- [interior-inventory] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-04-25T05:12:18.590Z  INFO 168020 --- [interior-inventory] [           main] c.m.i.InteriorInventoryApplication       : Started InteriorInventoryApplication in 9.963 seconds (process running for 10.524)

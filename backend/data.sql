@@ -413,47 +413,6 @@ INSERT INTO case_materials (case_id, material_id,
   (18, 28, 24, 'PURCHASE', 35.00,   840.00,  1),
   (18, 41, 5,  'PURCHASE', 650.00,  3250.00, 1);
 
--- === 建材商對帳單（假設就是你 PDF 上其中一張出貨單） ===
-INSERT INTO supplier_invoices (id, supplier_name, invoice_number, invoice_date, total_amount, created_at)
-VALUES
-  (1, '某某建材行', '115020185', DATE '2026-02-09', 36435.00, NOW());
-
--- === 建材商對帳單明細（節錄幾項） ===
-INSERT INTO supplier_invoice_items
-  (id, supplier_invoice_id, material_id, description,
-   shipped_quantity, billed_quantity, unit_price,
-   line_amount, is_return)
-VALUES
-  -- 永新集層 角材 80*12*10#F1(綠建材) 160支 50 8,000
-  (1, 1, 1,
-   '永新集層 角材 80*12*10#F1(綠建材)',
-   160, 160, 50.00,
-   8000.00, FALSE),
-
-  -- 永新集層 角材 80*18*10#F1(綠建材) 35支 75 2,625
-  (2, 1, 2,
-   '永新集層 角材 80*18*10#F1(綠建材)',
-   35, 35, 75.00,
-   2625.00, FALSE),
-
-  -- 木心板2*8 中興 6片 335 2,010
-  (3, 1, 3,
-   '木心板2*8 中興',
-   6, 6, 335.00,
-   2010.00, FALSE),
-
-  -- 台灣日通 9mm 3*6 20片 420 8,400
-  (4, 1, 4,
-   '台灣日通 9mm 3*6',
-   20, 20, 420.00,
-   8400.00, FALSE),
-
-  -- 儷士 矽酸鈣 6mm 3*6(日本) 40片 385 15,400
-  (5, 1, 5,
-   '儷士 矽酸鈣 6mm 3*6(日本)',
-   40, 40, 385.00,
-   15400.00, FALSE);
-
 -- === 預設師傅名單 ===
 INSERT INTO workers (nickname, daily_wage, wage_type, share_rate) VALUES
   -- 日薪制（原有 11 位）
