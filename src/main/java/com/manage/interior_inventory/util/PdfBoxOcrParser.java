@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.text.TextPosition;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.*;
+import java.io.IOException;
 
 @Slf4j
 public class PdfBoxOcrParser {
@@ -51,8 +53,8 @@ public class PdfBoxOcrParser {
     private static final Pattern P_NET = Pattern.compile("付現應收[：:]*\\s*([\\d,]+)");
 
     // 批次 header：民國日期 + 出貨單號，同一行或相鄰
-    // e.g. "115/02/09 115020185"
-    private static final Pattern P_BATCH_HEADER = Pattern.compile("^(\\d{3}/\\d{2}/\\d{2})\\s+(\\d{5,})");
+    // e.g. "115/02/09"
+    private static final Pattern P_BATCH_HEADER = Pattern.compile("^(\\d{3}/\\d{2}/\\d{2})");
 
     // 退貨區段標記
     private static final Pattern P_RETURN_SECTION = Pattern.compile(".*以下退回收退料.*");
@@ -105,8 +107,11 @@ public class PdfBoxOcrParser {
 
     public static ParseResult parse(byte[] pdfBytes, Collection<String> knownUnits) {
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            String text = new PDFTextStripper().getText(doc);
-            if (text == null || text.isBlank())
+            RowMergingStripper stripper = new RowMergingStripper();
+            stripper.getText(doc);
+            String text = String.join("\n", stripper.getMergedLines());
+
+            if (text.isBlank())
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "無法解析此 PDF，請確認為文字型 PDF");
             return parseText(text, knownUnits);
@@ -130,12 +135,25 @@ public class PdfBoxOcrParser {
         BigDecimal cashDiscount = null;
         BigDecimal netPayable = null;
 
+        boolean nextLineIsAddress = false; // 加在迴圈外
+
         for (String raw : lines) {
             String t = raw.trim();
             if (deliveryAddress == null) {
+                if (nextLineIsAddress && !t.isEmpty()) {
+                    deliveryAddress = t;
+                    nextLineIsAddress = false;
+                }
                 Matcher m = P_DELIVERY.matcher(t);
-                if (m.find())
-                    deliveryAddress = m.group(1).trim();
+                if (m.find()) {
+                    String inline = m.group(1).trim();
+                    // 同行有實質內容（不只是「頁數:1」這種）
+                    if (!inline.isBlank() && !inline.matches(".*頁數.*")) {
+                        deliveryAddress = inline;
+                    } else {
+                        nextLineIsAddress = true; // 地址在下一行
+                    }
+                }
             }
             if (receivableAmount == null) {
                 Matcher m = P_RECEIVABLE.matcher(t);
@@ -183,8 +201,10 @@ public class PdfBoxOcrParser {
 
             // 品項行
             Matcher im = pItem.matcher(t); // P_ITEM → pItem
-            if (!im.matches())
+            if (!im.matches()) {
+                log.debug("[PDF跳過] t='{}'", t);
                 continue;
+            }
 
             boolean hasReturnPrefix = im.group(1) != null;
             boolean isReturn = returnMode || hasReturnPrefix;
@@ -205,8 +225,38 @@ public class PdfBoxOcrParser {
             items.add(new ParsedItem(
                     name, unit, qty, price, total, currentDate, isReturn));
         }
-
         return new ParseResult(
                 deliveryAddress, receivableAmount, cashDiscount, netPayable, items);
+    }
+
+    private static class RowMergingStripper extends PDFTextStripper {
+
+        // Y座標（四捨五入到偶數，容差 ±2pt）→ 該列累積文字
+        private final TreeMap<Integer, StringBuilder> rows = new TreeMap<>();
+
+        public RowMergingStripper() throws IOException {
+            setSortByPosition(true);
+        }
+
+        @Override
+        protected void writeString(String text,
+                List<TextPosition> positions) throws IOException {
+            if (positions == null || positions.isEmpty())
+                return;
+            // 以第一個字的 Y 座標分桶（每4pt一桶，消除微小偏差）
+            int y = Math.round(positions.get(0).getY() / 4) * 4;
+            rows.computeIfAbsent(y, k -> new StringBuilder())
+                    .append(text).append(" ");
+        }
+
+        public List<String> getMergedLines() {
+            List<String> result = new ArrayList<>();
+            for (StringBuilder sb : rows.values()) {
+                String line = sb.toString().trim();
+                if (!line.isEmpty())
+                    result.add(line);
+            }
+            return result;
+        }
     }
 }
