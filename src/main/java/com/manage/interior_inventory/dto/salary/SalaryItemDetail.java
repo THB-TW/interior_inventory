@@ -13,6 +13,7 @@ public record SalaryItemDetail(
         String wageType,
         BigDecimal baseAmount,
         BigDecimal travelExpenses,
+        BigDecimal mealAllowance,
         BigDecimal adjustment,
         BigDecimal finalAmount,
         boolean isPaid,

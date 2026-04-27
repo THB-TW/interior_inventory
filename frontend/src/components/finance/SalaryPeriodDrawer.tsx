@@ -246,7 +246,7 @@ export default function SalaryPeriodDrawer({ periodId, onClose, onUpdated }: Pro
                                         </div>
                                       </div>
 
-                                      <div className="grid grid-cols-4 gap-2 text-slate-500">
+                                      <div className="grid grid-cols-5 gap-2 text-slate-500">
                                         <div>
                                           <p className="text-[10px] text-slate-400">底薪</p>
                                           <p>{fmt(item.baseAmount)}</p>
@@ -254,6 +254,10 @@ export default function SalaryPeriodDrawer({ periodId, onClose, onUpdated }: Pro
                                         <div>
                                           <p className="text-[10px] text-slate-400">車馬費</p>
                                           <p>{fmt(item.travelExpenses)}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] text-slate-400">餐費</p>
+                                          <p>{fmt(item.mealAllowance)}</p>
                                         </div>
                                         <div>
                                           <p className="text-[10px] text-slate-400">調整</p>

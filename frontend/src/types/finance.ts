@@ -9,6 +9,7 @@ export interface ProjectProfitDTO {
     materialCost: number;
     workerCost: number;
     travelCost: number;
+    mealCost: number;
     profit: number;
     profitRate: number | null;
 }

@@ -68,7 +68,7 @@ export default function FinancePage() {
     const totalContract = filtered.reduce((s, r) => s + (r.contractAmount ?? 0), 0);
     const totalProfit = filtered.reduce((s, r) => s + r.profit, 0);
     const totalMaterial = filtered.reduce((s, r) => s + r.materialCost, 0);
-    const totalWorker = filtered.reduce((s, r) => s + r.workerCost + r.travelCost, 0);
+    const totalWorker = filtered.reduce((s, r) => s + r.workerCost + r.travelCost + r.mealCost, 0);
 
     return (
         <>
@@ -121,7 +121,7 @@ export default function FinancePage() {
                         {[
                             { label: '合約總額', value: fmt(totalContract), sub: `${filtered.length} 個案件` },
                             { label: '材料成本', value: fmt(totalMaterial), sub: '' },
-                            { label: '師傅工資', value: fmt(totalWorker), sub: '含車馬費' },
+                            { label: '師傅工資', value: fmt(totalWorker), sub: '含車馬費與餐費' },
                             {
                                 label: '總利潤',
                                 value: fmt(totalProfit),
@@ -185,7 +185,7 @@ export default function FinancePage() {
                                                 </td>
                                                 <td className="px-4 py-3">{fmt(r.contractAmount)}</td>
                                                 <td className="px-4 py-3 text-orange-600">{fmt(r.materialCost)}</td>
-                                                <td className="px-4 py-3 text-blue-600">{fmt(r.workerCost + r.travelCost)}</td>
+                                                <td className="px-4 py-3 text-blue-600">{fmt(r.workerCost + r.travelCost + r.mealCost)}</td>
                                                 <td className="px-4 py-3">{fmt(r.profit)}</td>
                                                 <td className="px-4 py-3"><ProfitBadge rate={r.profitRate} /></td>
                                                 <td className="px-4 py-3">

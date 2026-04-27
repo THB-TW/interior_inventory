@@ -9,4 +9,7 @@ import java.util.List;
 public interface MaterialRepository extends JpaRepository<Material, Long> {
     @Query("SELECT DISTINCT m.unit FROM Material m WHERE m.isActive = true AND m.unit IS NOT NULL AND m.unit <> ''")
     List<String> findAllDistinctUnits();
+
+    boolean existsByName(String name);
+    boolean existsByNameAndIdNot(String name, Long id);
 }

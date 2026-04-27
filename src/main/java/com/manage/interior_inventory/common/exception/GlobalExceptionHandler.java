@@ -86,6 +86,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 處理自定義業務邏輯例外
+     * HTTP Status: 400 Bad Request
+     */
+    @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Object> handleBusinessException(BusinessException ex) {
+        log.warn("業務邏輯錯誤: {}", ex.getMessage());
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    /**
      * 預設處理器：處理所有未被特化的例外，防止敏感系統錯誤直接噴給前端
      * HTTP Status: 500 Internal Server Error
      */

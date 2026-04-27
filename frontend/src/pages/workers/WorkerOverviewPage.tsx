@@ -200,6 +200,12 @@ export default function WorkerOverviewPage() {
                                                                 ${project.totalTravel.toLocaleString()}
                                                             </span>
                                                         </div>
+                                                        <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs text-slate-700 flex items-center gap-1.5">
+                                                            <span className="text-slate-400">總餐費</span>
+                                                            <span className="font-semibold text-slate-800">
+                                                                ${project.totalMeal.toLocaleString()}
+                                                            </span>
+                                                        </div>
                                                         <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs flex items-center gap-1.5">
                                                             <span className="text-slate-400">總工人支出</span>
                                                             <span className="font-bold text-[var(--color-primary)]">
@@ -226,6 +232,7 @@ export default function WorkerOverviewPage() {
                                                                         <th className="px-3 py-2 text-center">施作天數</th>
                                                                         <th className="px-3 py-2 text-right">總工錢</th>
                                                                         <th className="px-3 py-2 text-right">總車馬費</th>
+                                                                        <th className="px-3 py-2 text-right">總餐費</th>
                                                                         <th className="px-3 py-2 text-right">小計</th>
                                                                     </tr>
                                                                 </thead>
@@ -236,6 +243,7 @@ export default function WorkerOverviewPage() {
                                                                             workerId: number | null;
                                                                             totalWage: number;
                                                                             totalTravel: number;
+                                                                            totalMeal: number;
                                                                             count: number;
                                                                         }>>((acc, w) => {
                                                                             const key = w.workerId != null
@@ -247,11 +255,13 @@ export default function WorkerOverviewPage() {
                                                                                     workerId: w.workerId,
                                                                                     totalWage: w.dailyWage,
                                                                                     totalTravel: w.travelExpenses,
+                                                                                    totalMeal: w.mealAllowance,
                                                                                     count: 1,
                                                                                 };
                                                                             } else {
                                                                                 acc[key].totalWage += w.dailyWage;
                                                                                 acc[key].totalTravel += w.travelExpenses;
+                                                                                acc[key].totalMeal += w.mealAllowance;
                                                                                 acc[key].count += 1;
                                                                             }
                                                                             return acc;
@@ -265,8 +275,9 @@ export default function WorkerOverviewPage() {
                                                                             <td className="px-3 py-2 text-center">{g.count} 天</td>
                                                                             <td className="px-3 py-2 text-right">${g.totalWage.toLocaleString()}</td>
                                                                             <td className="px-3 py-2 text-right">${g.totalTravel.toLocaleString()}</td>
+                                                                            <td className="px-3 py-2 text-right">${g.totalMeal.toLocaleString()}</td>
                                                                             <td className="px-3 py-2 text-right font-medium">
-                                                                                ${(g.totalWage + g.totalTravel).toLocaleString()}
+                                                                                ${(g.totalWage + g.totalTravel + g.totalMeal).toLocaleString()}
                                                                             </td>
                                                                         </tr>
                                                                     ))}

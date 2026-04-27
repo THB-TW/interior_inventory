@@ -41,6 +41,7 @@ export interface SalaryItemDetail {
     wageType: WageType
     baseAmount: number
     travelExpenses: number
+    mealAllowance: number
     adjustment: number
     finalAmount: number
     isPaid: boolean

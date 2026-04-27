@@ -24,6 +24,7 @@ type FormState = {
     workday: string;
     workdayEnd: string;
     travelExpenses: string;
+    mealAllowance: string;
 };
 
 const emptyForm: FormState = {
@@ -33,6 +34,7 @@ const emptyForm: FormState = {
     workday: '',
     workdayEnd: '',
     travelExpenses: '0',
+    mealAllowance: '150',
 };
 
 export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
@@ -74,6 +76,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                 workday: form.workday,
                 workdayEnd: form.workdayEnd || undefined,
                 travelExpenses: Number(form.travelExpenses),
+                mealAllowance: Number(form.mealAllowance),
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['worker-overview'] });
@@ -91,6 +94,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                 workday: form.workday,
                 workdayEnd: form.workdayEnd || undefined,
                 travelExpenses: Number(form.travelExpenses),
+                mealAllowance: Number(form.mealAllowance),
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['worker-overview'] });
@@ -118,6 +122,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
             workday: row.workday,
             workdayEnd: '',
             travelExpenses: String(row.travelExpenses),
+            mealAllowance: String(row.mealAllowance),
         });
     };
 
@@ -172,6 +177,7 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                             <th className="px-3 py-2 text-center">天數</th>
                                             <th className="px-3 py-2 text-right">當天工錢</th>
                                             <th className="px-3 py-2 text-right">車馬費</th>
+                                            <th className="px-3 py-2 text-right">餐費</th>
                                             <th className="px-3 py-2 text-right">操作</th>
                                         </tr>
                                     </thead>
@@ -188,6 +194,9 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                                 </td>
                                                 <td className="px-3 py-2 text-right">
                                                     ${row.travelExpenses.toLocaleString()}
+                                                </td>
+                                                <td className="px-3 py-2 text-right">
+                                                    ${row.mealAllowance.toLocaleString()}
                                                 </td>
                                                 <td className="px-3 py-2 text-right space-x-2">
                                                     <button
@@ -248,7 +257,14 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                     </label>
                                     <select
                                         value={form.daysWorked}
-                                        onChange={(e) => setForm((f) => ({ ...f, daysWorked: e.target.value }))}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setForm((f) => ({
+                                                ...f,
+                                                daysWorked: val,
+                                                mealAllowance: val === '0.5' ? '100' : '150'
+                                            }));
+                                        }}
                                         className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                                     >
                                         <option value="1">整天（1 天）</option>
@@ -318,6 +334,21 @@ export default function CaseWorkerModal({ isOpen, onClose, project }: Props) {
                                         onChange={(e) => setForm((f) => ({ ...f, travelExpenses: e.target.value }))}
                                         className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                                         placeholder="例如：200"
+                                    />
+                                </div>
+
+                                {/* 餐費 */}
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                                        餐費（元）
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={form.mealAllowance}
+                                        onChange={(e) => setForm((f) => ({ ...f, mealAllowance: e.target.value }))}
+                                        className="w-full h-9 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                                        placeholder="例如：150"
                                     />
                                 </div>
 

@@ -22,13 +22,14 @@ public interface CaseWorkerRepository extends JpaRepository<CaseWorker, Long> {
 
     /**
      * 依日期區間彙總每位師傅每個案子的薪資：
-     * [0] workerId, [1] projectId, [2] SUM(dailyWage), [3] SUM(travelExpenses)
+     * [0] workerId, [1] projectId, [2] SUM(dailyWage), [3] SUM(travelExpenses), [4] SUM(mealAllowance)
      */
     @Query("""
             SELECT c.worker.id,
                    c.project.id,
                    SUM(c.dailyWage),
-                   SUM(c.travelExpenses)
+                   SUM(c.travelExpenses),
+                   SUM(c.mealAllowance)
             FROM CaseWorker c
             WHERE c.workday BETWEEN :start AND :end
             GROUP BY c.worker.id, c.project.id

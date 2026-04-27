@@ -84,7 +84,7 @@ CREATE INDEX idx_cases_status ON projects (status);
 -- === 料件 master ===
 CREATE TABLE materials (
     id            BIGSERIAL PRIMARY KEY,
-    name          VARCHAR(100) NOT NULL,
+    name          VARCHAR(100) NOT NULL UNIQUE,
     unit          VARCHAR(20)  NOT NULL,
     description   TEXT,
     default_price NUMERIC(10,2),
@@ -208,6 +208,7 @@ CREATE TABLE case_workers (
     worker_id       BIGINT REFERENCES workers(id) ON DELETE CASCADE,
     daily_wage      NUMERIC(10,2) NOT NULL DEFAULT 0,
     workday         DATE NOT NULL,
+    meal_allowance  NUMERIC(10,2) NOT NULL DEFAULT 150,
     travel_expenses NUMERIC(10,2) NOT NULL DEFAULT 0,
     days_worked     NUMERIC(3,1)  NOT NULL DEFAULT 1.0,
     CONSTRAINT chk_days_worked_positive CHECK (days_worked > 0)
@@ -231,6 +232,7 @@ CREATE TABLE worker_salary_items (
     wage_type       VARCHAR(20)   NOT NULL,
     base_amount     NUMERIC(10,2) NOT NULL,
     travel_expenses NUMERIC(10,2) NOT NULL DEFAULT 0,
+    meal_allowance  NUMERIC(10,2) NOT NULL DEFAULT 0,
     adjustment      NUMERIC(10,2) NOT NULL DEFAULT 0,
     final_amount    NUMERIC(10,2) NOT NULL,
     is_paid         BOOLEAN       NOT NULL DEFAULT FALSE,
