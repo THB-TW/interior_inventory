@@ -4,10 +4,13 @@ spring:
 
   # 資料來源設定（請依你的 Docker / 本機環境調整）
   datasource:
-    url: jdbc:postgresql://localhost:5432/order_inventory_db
-    username: order_user
-    password: 123 #${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/order_inventory_db}
+    username: ${SPRING_DATASOURCE_USERNAME:order_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:123}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      initialization-fail-timeout: 0    # 連線失敗不 crash，一直重試
+      connection-timeout: 30000         # 等 30 秒拿不到連線才算失敗
 
   jpa:
     hibernate:
@@ -25,8 +28,8 @@ spring.servlet.multipart.max-request-size: 5MB
 
 line:
   bot:
-    channel-secret: 34e8de1c69d5b3bd6a3d18483445359b #${LINE_CHANNEL_SECRET:test}
-    channel-token: rJK2HL1aYtT1o1GwnvmnRwtZSW2UAodGsLf5AqGZ4ML3/+9L/VbmPg4oNAr8HLoqgxB72xesB4L0y/ezCggpMVIVW1+dxO1pSG+WaeZb9J0wnOFmM033oF5xaVPjCkRIv/q/BnjX13wC1dvBM/A2kAdB04t89/1O/w1cDnyilFU= #${LINE_CHANNEL_TOKEN:test}
+    channel-secret: ${LINE_CHANNEL_SECRET}
+    channel-token:  ${LINE_CHANNEL_TOKEN}
     handler:
       path: /webhook/line
 

@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+.env
+
+# Maven/Gradle build
+target/
+*.jar
+*.war
+*.class
+
+# Docker volume 資料
+postgres-data/

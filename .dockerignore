@@ -1,0 +1,18 @@
+# Maven 編譯輸出，不需要複製進 Docker
+target/
+
+# Git 相關
+.git/
+.gitignore
+
+# IDE 設定
+.idea/
+*.iml
+*.xml.bak
+
+# 敏感資訊
+.env
+
+# 前端的 node_modules 和 build 輸出
+frontend/node_modules/
+frontend/dist/

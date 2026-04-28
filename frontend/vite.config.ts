@@ -14,7 +14,9 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 5173,
+    allowedHosts: true,
     proxy: {
       // 將 /api 開頭的請求代理到後端，開發時不會有 CORS 問題
       '/api': {

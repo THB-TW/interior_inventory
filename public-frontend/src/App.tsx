@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -93,7 +93,7 @@ export default function App() {
       {/* Main Form Section */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pb-24 -mt-4 relative z-10">
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/40 p-6 sm:p-8 border border-slate-100">
-          
+
           {apiError && (
             <div className="mb-6 p-4 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100">
               {apiError}
@@ -101,14 +101,14 @@ export default function App() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            
+
             {/* 區塊 1: 聯絡資訊 */}
             <div className="space-y-4">
               <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
                 <User size={18} className="text-[var(--color-primary)]" />
                 基本資料
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block text-sm font-medium text-slate-700">
                   真實姓名 <span className="text-red-500">*</span>
@@ -120,7 +120,7 @@ export default function App() {
                   />
                   {errors.clientName && <p className="mt-1 text-sm text-red-500">{errors.clientName.message}</p>}
                 </label>
-                
+
                 <label className="block text-sm font-medium text-slate-700">
                   聯絡電話 <span className="text-red-500">*</span>
                   <input
@@ -140,7 +140,7 @@ export default function App() {
                 <MapPin size={18} className="text-[var(--color-primary)]" />
                 案場位置
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block text-sm font-medium text-slate-700">
                   所在縣市 <span className="text-red-500">*</span>

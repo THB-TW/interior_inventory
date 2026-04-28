@@ -1,32 +1,66 @@
 version: "3.8"
 
 services:
+
+  # ── 資料庫 ──────────────────────────────────────
   postgres:
     image: postgres:16
-    container_name: wms
+    container_name: interior-inventory-docker
     restart: always
     environment:
       POSTGRES_USER: order_user
       POSTGRES_PASSWORD: "123"
       POSTGRES_DB: order_inventory_db
     ports:
-      - "5432:5432"
+      - "5432:5432"   # 如果本機也有 PostgreSQL，改成 "5433:5432"
     volumes:
       - wms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_inventory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
+  # ── 後端 Spring Boot ────────────────────────────
   app:
-    build: .
+    build: .           # 使用根目錄的 Dockerfile
     container_name: interior-inventory-app
     ports:
       - "8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/order_inventory_db
+      # postgres = 上面那個服務的名稱，Docker 自動解析成 IP
       - SPRING_DATASOURCE_USERNAME=order_user
       - SPRING_DATASOURCE_PASSWORD=123
       - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
       - LINE_CHANNEL_TOKEN=${LINE_CHANNEL_TOKEN}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # ── 老闆後台 React ──────────────────────────────
+  frontend:
+    build:
+      context: ./frontend   # Dockerfile 在 frontend/ 目錄裡
+      dockerfile: Dockerfile
+    container_name: interior-frontend
+    ports:
+      - "3000:80"   # 本機 3000 → 容器 Nginx 80
+    depends_on:
+      - app
+
+  # ── 公開前台 React ──────────────────────────────
+  public-frontend:
+    build:
+      context: ./public-frontend
+      dockerfile: Dockerfile
+    container_name: interior-public-frontend
+    ports:
+      - "3001:80"   # 老闆後台用 3000，公開前台用 3001
+    depends_on:
+      - app
 
 volumes:
   wms_pgdata:
+    # 保留原本的 volume 名稱，這樣現有資料不會消失！
