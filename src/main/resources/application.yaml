@@ -4,7 +4,7 @@ spring:
 
   # 資料來源設定（請依你的 Docker / 本機環境調整）
   datasource:
-    url: ${SPRING_DATASOURCE_URL} #jdbc:postgresql://localhost:5432/order_inventory_db
+    url: ${SPRING_DATASOURCE_NEWURL} #jdbc:postgresql://localhost:5432/order_inventory_db 要在本地的話變數名稱後面拿掉NEW
     username: ${SPRING_DATASOURCE_USERNAME:order_user}
     password: ${SPRING_DATASOURCE_PASSWORD:123}
     driver-class-name: org.postgresql.Driver
