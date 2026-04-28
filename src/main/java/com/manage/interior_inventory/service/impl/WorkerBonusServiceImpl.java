@@ -40,8 +40,8 @@ public class WorkerBonusServiceImpl implements WorkerBonusService {
         // 3. 轉換成前端需要的 DTO
         return rawData.stream().map(row -> {
             Long workerId = (Long) row[0];
-            String workerName = (String) row[1];
-            BigDecimal totalDays = new BigDecimal(row[2].toString());
+            String workerName = row[1] != null ? row[1].toString() : "未知師傅";
+            BigDecimal totalDays = row[2] != null ? new BigDecimal(row[2].toString()) : BigDecimal.ZERO;
 
             // 系統試算：總天數 * 每日基準 (使用 BigDecimal 的 multiply 方法，精準無誤差！)
             BigDecimal calculatedAmount = totalDays.multiply(dailyRate);
