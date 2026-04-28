@@ -42,3 +42,5 @@ target/
 
 # Docker volume 資料
 postgres-data/
+
+ngrok.exe
