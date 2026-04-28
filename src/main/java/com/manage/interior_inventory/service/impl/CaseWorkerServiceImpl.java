@@ -56,6 +56,10 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
                                 .map(CaseWorker::getTravelExpenses)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                BigDecimal totalMeal = rows.stream()
+                                .map(cw -> cw.getMealAllowance() != null ? cw.getMealAllowance() : BigDecimal.ZERO)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
                 BigDecimal totalWorkdays = rows.stream()
                                 .map(cw -> cw.getDaysWorked() != null ? cw.getDaysWorked() : BigDecimal.ONE)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -69,7 +73,8 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
                                 .totalWorkdays(totalWorkdays)
                                 .totalWage(totalWage)
                                 .totalTravel(totalTravel)
-                                .totalWorkerCost(totalWage.add(totalTravel))
+                                .totalMeal(totalMeal)
+                                .totalWorkerCost(totalWage.add(totalTravel).add(totalMeal))
                                 .workers(rows.stream().map(CaseWorkerResponse::fromEntity).toList())
                                 .build();
         }
@@ -115,6 +120,7 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
                                         .daysWorked(daysWorked)
                                         .workday(date)
                                         .travelExpenses(request.travelExpenses())
+                                        .mealAllowance(request.mealAllowance())
                                         .build());
                 }
 
@@ -148,6 +154,7 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
                 entity.setDaysWorked(daysWorked);
                 entity.setWorkday(request.workday());
                 entity.setTravelExpenses(request.travelExpenses());
+                entity.setMealAllowance(request.mealAllowance());
 
                 return CaseWorkerResponse.fromEntity(caseWorkerRepository.save(entity));
         }

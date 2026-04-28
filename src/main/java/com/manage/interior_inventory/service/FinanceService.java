@@ -73,8 +73,9 @@ public class FinanceService {
             WorkerProjectSummary workerSummary) {
         BigDecimal workerCost = workerSummary != null ? workerSummary.getTotalWage() : BigDecimal.ZERO;
         BigDecimal travelCost = workerSummary != null ? workerSummary.getTotalTravel() : BigDecimal.ZERO;
+        BigDecimal mealCost = workerSummary != null ? workerSummary.getTotalMeal() : BigDecimal.ZERO;
         BigDecimal contract = p.getContractAmount() != null ? p.getContractAmount() : BigDecimal.ZERO;
-        BigDecimal profit = contract.subtract(materialCost).subtract(workerCost).subtract(travelCost);
+        BigDecimal profit = contract.subtract(materialCost).subtract(workerCost).subtract(travelCost).subtract(mealCost);
 
         Double profitRate = p.getContractAmount() != null
                 && p.getContractAmount().compareTo(BigDecimal.ZERO) > 0
@@ -85,6 +86,6 @@ public class FinanceService {
         return new ProjectProfitDTO(
                 p.getId(), p.getProjectCode(), p.getClientName(), p.getStatus().name(),
                 p.getContractAmount(), p.getReceivedAmount(), p.getPaymentStatus(),
-                materialCost, workerCost, travelCost, profit, profitRate);
+                materialCost, workerCost, travelCost, mealCost, profit, profitRate);
     }
 }

@@ -20,6 +20,7 @@ export interface CaseWorkerRow {
   workday: string;              // ISO date "2025-04-01"
   daysWorked: number;
   travelExpenses: number;
+  mealAllowance: number;
 }
 
 // 對應後端 WorkerProjectSummary
@@ -32,6 +33,7 @@ export interface WorkerProjectSummary {
   totalWorkdays: number;
   totalWage: number;
   totalTravel: number;
+  totalMeal: number;
   totalWorkerCost: number;
   workers: CaseWorkerRow[];
 }
@@ -43,4 +45,5 @@ export interface CaseWorkerRequest {
   workdayEnd?: string;            // ISO date "2025-04-01"
   daysWorked: number;
   travelExpenses: number;
+  mealAllowance: number;
 }

@@ -11,7 +11,8 @@ public record CaseWorkerResponse(
         BigDecimal dailyWage,
         LocalDate workday,
         BigDecimal daysWorked,
-        BigDecimal travelExpenses) {
+        BigDecimal travelExpenses,
+        BigDecimal mealAllowance) {
     public static CaseWorkerResponse fromEntity(CaseWorker cw) {
         return new CaseWorkerResponse(
                 cw.getId(),
@@ -20,6 +21,7 @@ public record CaseWorkerResponse(
                 cw.getDailyWage(),
                 cw.getWorkday(),
                 cw.getDaysWorked(),
-                cw.getTravelExpenses());
+                cw.getTravelExpenses(),
+                cw.getMealAllowance());
     }
 }

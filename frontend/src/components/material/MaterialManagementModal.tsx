@@ -65,6 +65,9 @@ export default function MaterialManagementModal({
             queryClient.invalidateQueries({ queryKey: ['materials'] });
             setForm(emptyForm);
         },
+        onError: (error: Error) => {
+            alert(error.message);
+        },
     });
 
     const updateMutation = useMutation({
@@ -79,6 +82,9 @@ export default function MaterialManagementModal({
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['materials'] });
             setForm(emptyForm);
+        },
+        onError: (error: Error) => {
+            alert(error.message);
         },
     });
 

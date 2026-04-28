@@ -153,6 +153,7 @@ public class WorkerSalaryService {
         item.setFinalAmount(
                 item.getBaseAmount()
                         .add(item.getTravelExpenses())
+                        .add(item.getMealAllowance())
                         .add(req.adjustment()));
         if (req.note() != null)
             item.setNote(req.note());
@@ -212,7 +213,7 @@ public class WorkerSalaryService {
                     "只有 PENDING 狀態的期別可重新整理，目前狀態：" + period.getStatus());
         }
 
-        // 彙總：[workerId, projectId, SUM(dailyWage), SUM(travelExpenses)]
+        // 彙總：[workerId, projectId, SUM(dailyWage), SUM(travelExpenses), SUM(mealAllowance)]
         List<Object[]> rows = caseWorkerRepo.sumByWorkerBetween(
                 period.getPeriodStart(), period.getPeriodEnd());
 
@@ -221,6 +222,7 @@ public class WorkerSalaryService {
             Long projectId = ((Number) row[1]).longValue();
             BigDecimal base = (BigDecimal) row[2];
             BigDecimal travel = (BigDecimal) row[3];
+            BigDecimal meal = row[4] != null ? (BigDecimal) row[4] : BigDecimal.ZERO;
 
             // 按 (period + worker + project + wageType) 找荷或建立
             WorkerSalaryItem item = itemRepo
@@ -232,7 +234,8 @@ public class WorkerSalaryService {
                 // 更新（保留 adjustment、isPaid、note）
                 item.setBaseAmount(base);
                 item.setTravelExpenses(travel);
-                item.setFinalAmount(base.add(travel).add(item.getAdjustment()));
+                item.setMealAllowance(meal);
+                item.setFinalAmount(base.add(travel).add(meal).add(item.getAdjustment()));
                 itemRepo.save(item);
             } else {
                 // 新增
@@ -243,8 +246,9 @@ public class WorkerSalaryService {
                         .wageType("DAILY")
                         .baseAmount(base)
                         .travelExpenses(travel)
+                        .mealAllowance(meal)
                         .adjustment(BigDecimal.ZERO)
-                        .finalAmount(base.add(travel))
+                        .finalAmount(base.add(travel).add(meal))
                         .isPaid(false)
                         .build();
                 itemRepo.save(newItem);
@@ -326,6 +330,7 @@ public class WorkerSalaryService {
                 i.getWageType(),
                 i.getBaseAmount(),
                 i.getTravelExpenses(),
+                i.getMealAllowance(),
                 i.getAdjustment(),
                 i.getFinalAmount(),
                 Boolean.TRUE.equals(i.getIsPaid()),

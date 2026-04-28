@@ -27,9 +27,6 @@ public class Worker {
     @Column(name = "wage_type", nullable = false, length = 20)
     private String wageType; // DAILY / PROJECT_SHARE
 
-    @Column(name = "share_rate", precision = 5, scale = 4)
-    private BigDecimal shareRate; // e.g. 0.0800
-
     @OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)
     private List<WorkerSalaryItem> salaryItems;
 }

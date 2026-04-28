@@ -73,7 +73,9 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
         CaseMaterialType materialType = Optional.ofNullable(request.getMaterialType())
                 .orElse(CaseMaterialType.PURCHASE);
 
-        BigDecimal unitPrice = material.getDefaultPrice(); // 暫時用材料預設單價
+        BigDecimal unitPrice = request.getUnitPrice() != null
+                ? request.getUnitPrice()
+                : material.getDefaultPrice();
         BigDecimal lineCost = (unitPrice != null)
                 ? unitPrice.multiply(BigDecimal.valueOf(quantity))
                 : null;
@@ -112,7 +114,13 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
             Material material = materialRepository.findById(request.getMaterialId())
                     .orElseThrow(() -> new IllegalArgumentException("找不到材料，id=" + request.getMaterialId()));
             caseMaterial.setMaterial(material);
-            caseMaterial.setUnitPrice(material.getDefaultPrice());
+            if (request.getUnitPrice() == null) {
+                caseMaterial.setUnitPrice(material.getDefaultPrice());
+            }
+        }
+
+        if (request.getUnitPrice() != null) {
+            caseMaterial.setUnitPrice(request.getUnitPrice());
         }
 
         if (request.getMaterialType() != null) {
@@ -219,13 +227,23 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
             CaseMaterialType type = cm.getMaterialType();
 
             switch (type) {
-                case PURCHASE -> agg.purchaseQuantity += qty;
-                case LEFTOVER -> agg.leftoverQuantity += qty;
-                case RETURN -> agg.returnQuantity += qty;
+                case PURCHASE -> {
+                    agg.purchaseQuantity += qty;
+                    if (cm.getLineCost() != null)
+                        agg.totalLineCost = agg.totalLineCost.add(cm.getLineCost());
+                }
+                case LEFTOVER -> {
+                    agg.leftoverQuantity += qty;
+                    if (cm.getLineCost() != null)
+                        agg.totalLineCost = agg.totalLineCost.add(cm.getLineCost());
+                }
+                case RETURN -> {
+                    agg.returnQuantity += qty;
+                    if (cm.getLineCost() != null)
+                        agg.totalLineCost = agg.totalLineCost.subtract(cm.getLineCost()); // 退貨扣除成本
+                }
             }
-
-            // 只要還沒設定 unitPrice，就拿第一個有值的
-            if (agg.unitPrice == null && cm.getUnitPrice() != null) {
+            if (cm.getUnitPrice() != null) {
                 agg.unitPrice = cm.getUnitPrice();
             }
         }
@@ -233,11 +251,6 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
         List<QuoteMaterialResponse> materialDtos = new ArrayList<>();
         for (AggregatedMaterial agg : aggregated.values()) {
             int total = agg.purchaseQuantity + agg.leftoverQuantity - agg.returnQuantity;
-
-            BigDecimal lineCost = null;
-            if (agg.unitPrice != null && total != 0) {
-                lineCost = agg.unitPrice.multiply(BigDecimal.valueOf(total));
-            }
 
             materialDtos.add(QuoteMaterialResponse.builder()
                     .caseMaterialId(agg.caseMaterialId)
@@ -247,8 +260,8 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
                     .leftoverQuantity(agg.leftoverQuantity)
                     .returnQuantity(agg.returnQuantity)
                     .totalQuantity(total)
-                    .unitPrice(agg.unitPrice) // 你要先在 DTO 加上這兩個欄位
-                    .lineCost(lineCost)
+                    .unitPrice(agg.unitPrice)
+                    .lineCost(agg.totalLineCost.compareTo(BigDecimal.ZERO) == 0 ? null : agg.totalLineCost) // 改用累加的結果
                     .build());
         }
 
@@ -276,5 +289,6 @@ public class QuoteUsageServiceImpl implements QuoteUsageService {
         int leftoverQuantity;
         int returnQuantity;
         BigDecimal unitPrice;
+        BigDecimal totalLineCost = BigDecimal.ZERO;
     }
 }

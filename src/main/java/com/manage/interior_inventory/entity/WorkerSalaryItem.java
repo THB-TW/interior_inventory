@@ -44,6 +44,9 @@ public class WorkerSalaryItem {
     @Column(name = "travel_expenses", nullable = false, precision = 10, scale = 2)
     private BigDecimal travelExpenses;
 
+    @Column(name = "meal_allowance", nullable = false, precision = 10, scale = 2)
+    private BigDecimal mealAllowance;
+
     @Column(name = "adjustment", nullable = false, precision = 10, scale = 2)
     private BigDecimal adjustment;
 
@@ -67,6 +70,8 @@ public class WorkerSalaryItem {
         this.createdAt = LocalDateTime.now();
         if (this.travelExpenses == null)
             this.travelExpenses = BigDecimal.ZERO;
+        if (this.mealAllowance == null)
+            this.mealAllowance = BigDecimal.ZERO;
         if (this.adjustment == null)
             this.adjustment = BigDecimal.ZERO;
         if (this.isPaid == null)

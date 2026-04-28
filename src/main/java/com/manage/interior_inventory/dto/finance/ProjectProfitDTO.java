@@ -15,6 +15,7 @@ public record ProjectProfitDTO(
         BigDecimal materialCost,
         BigDecimal workerCost,
         BigDecimal travelCost,
+        BigDecimal mealCost,
 
         BigDecimal profit,
         Double profitRate) {

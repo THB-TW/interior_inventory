@@ -39,6 +39,7 @@ export default function FinanceDetailDrawer({ data, onClose, onUpdated }: Props)
         { label: '材料成本', value: fmt(data.materialCost), color: 'text-orange-600' },
         { label: '師傅工資', value: fmt(data.workerCost), color: 'text-blue-600' },
         { label: '車馬費', value: fmt(data.travelCost), color: 'text-blue-400' },
+        { label: '餐費', value: fmt(data.mealCost), color: 'text-blue-400' },
         { label: '工程利潤', value: fmt(data.profit), color: data.profit >= 0 ? 'text-green-600' : 'text-red-500' },
     ];
 

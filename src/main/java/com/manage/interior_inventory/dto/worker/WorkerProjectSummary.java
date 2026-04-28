@@ -21,6 +21,7 @@ public class WorkerProjectSummary {
     private BigDecimal totalWorkdays; // 工作天數
     private BigDecimal totalWage; // 總工錢
     private BigDecimal totalTravel; // 總車馬費
-    private BigDecimal totalWorkerCost; // 總工人支出 = totalWage + totalTravel
+    private BigDecimal totalMeal; // 總餐費
+    private BigDecimal totalWorkerCost; // 總工人支出 = totalWage + totalTravel + totalMeal
     private List<CaseWorkerResponse> workers;
 }

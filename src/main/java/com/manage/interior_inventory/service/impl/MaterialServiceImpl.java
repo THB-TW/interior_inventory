@@ -39,6 +39,10 @@ public class MaterialServiceImpl implements MaterialService {
     @Override
     @Transactional
     public MaterialResponse createMaterial(MaterialSaveRequest request) {
+        if (materialRepository.existsByName(request.getName())) {
+            throw new BusinessException("材料名稱已存在：" + request.getName());
+        }
+
         Material material = Material.builder()
                 .name(request.getName())
                 .unit(request.getUnit())
@@ -54,6 +58,10 @@ public class MaterialServiceImpl implements MaterialService {
     @Override
     @Transactional
     public MaterialResponse updateMaterial(Long id, MaterialSaveRequest request) {
+        if (materialRepository.existsByNameAndIdNot(request.getName(), id)) {
+            throw new BusinessException("材料名稱已存在：" + request.getName());
+        }
+
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("找不到材料 ID: " + id));
 
