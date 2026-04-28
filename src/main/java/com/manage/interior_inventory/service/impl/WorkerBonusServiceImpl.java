@@ -41,7 +41,7 @@ public class WorkerBonusServiceImpl implements WorkerBonusService {
         return rawData.stream().map(row -> {
             Long workerId = (Long) row[0];
             String workerName = (String) row[1];
-            BigDecimal totalDays = (BigDecimal) row[2];
+            BigDecimal totalDays = new BigDecimal(row[2].toString());
 
             // 系統試算：總天數 * 每日基準 (使用 BigDecimal 的 multiply 方法，精準無誤差！)
             BigDecimal calculatedAmount = totalDays.multiply(dailyRate);

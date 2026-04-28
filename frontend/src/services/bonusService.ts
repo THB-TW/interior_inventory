@@ -13,7 +13,7 @@ export const previewBonus = async (
     dailyRate: number = 100
 ): Promise<BonusPreviewResponse[]> => {
     // 呼叫 GET /api/finance/bonus/preview
-    const response = await apiClient.get<BonusPreviewResponse[]>('/api/finance/bonus/preview', {
+    const response = await apiClient.get<BonusPreviewResponse[]>('/finance/bonus/preview', {
         params: {
             startDate,
             endDate,
@@ -32,6 +32,6 @@ export const previewBonus = async (
  */
 export const confirmBonus = async (data: BonusConfirmRequest): Promise<void> => {
     // 呼叫 POST /api/finance/bonus/confirm
-    const response = await apiClient.post<void>('/api/finance/bonus/confirm', data);
+    const response = await apiClient.post<void>('/finance/bonus/confirm', data);
     return response.data;
 };

@@ -37,6 +37,6 @@ public class CaseWorker {
     @Column(name = "meal_allowance", nullable = false)
     private BigDecimal mealAllowance;
 
-    @Column(name = "days_worked", nullable = false, precision = 3, scale = 1)
+    @Column(name = "days_worked", nullable = false, precision = 4, scale = 1)
     private BigDecimal daysWorked;
 }
