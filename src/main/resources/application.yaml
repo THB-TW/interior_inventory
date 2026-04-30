@@ -9,6 +9,9 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:123}
     driver-class-name: org.postgresql.Driver
     hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      idle-timeout: 600000
       initialization-fail-timeout: 0    # 連線失敗不 crash，一直重試
       connection-timeout: 30000         # 等 30 秒拿不到連線才算失敗
 

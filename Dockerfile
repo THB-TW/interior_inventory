@@ -34,4 +34,13 @@ COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
 
 # 容器啟動時執行的指令
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+    "-Xms128m", \
+    "-Xmx400m", \
+    "-XX:MetaspaceSize=96m", \
+    "-XX:MaxMetaspaceSize=250m", \
+    "-XX:+UseContainerSupport", \
+    "-XX:+UseG1GC", \
+    "-XX:+UseStringDeduplication", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", "app.jar"]
